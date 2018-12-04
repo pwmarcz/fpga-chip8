@@ -1,0 +1,31 @@
+; test immediate add
+    ld v0, #20
+    add v0, #55
+    se v0, #75
+    jp fail
+
+; test register add
+    ld v0, #20
+    ld v1, #55
+    add v0, v1
+    se v0, #75
+    jp fail
+    se vf, 0
+    jp fail
+
+; test add with overflow
+    ld v0, #20
+    ld v1, #FF
+    add v0, v1
+    se v0, #1F
+    jp fail
+    se vf, 1
+    jp fail
+
+pass:
+    ld v0, #42
+    dw #00fd ; exit
+
+fail:
+    ld v0, #43
+    dw #00fd ; exit

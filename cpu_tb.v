@@ -49,6 +49,9 @@ module top;
     `run("test_call.hex");
     assert_equal(cpu0.v[0], 'h42);
 
+    `run("test_add.hex");
+    assert_equal(cpu0.v[0], 'h42);
+
     $finish;
   end
 
