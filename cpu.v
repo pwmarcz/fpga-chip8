@@ -31,9 +31,11 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
     STATE_POP_LO = 4,
     STATE_PUSH_HI = 5,
     STATE_PUSH_LO = 6,
-    STATE_DECODE = 7;
+    STATE_DECODE = 7,
+    STATE_STORE = 8,
+    STATE_LOAD = 9;
 
-  reg[3:0] state = STATE_FETCH_HI;
+  reg[4:0] state = STATE_FETCH_HI;
 
   // Memory loads and stores
   always @(*) begin
@@ -68,6 +70,15 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
         mem_write_idx = 2 * sp - 1;
         mem_write_byte = ret_pc[7:0];
       end
+      STATE_STORE: begin
+        mem_write = 1;
+        mem_write_idx = transfer_addr;
+        mem_write_byte = v[transfer_counter];
+      end
+      STATE_LOAD: if (!mem_read_ack) begin
+        mem_read = 1;
+        mem_read_idx = transfer_addr;
+      end
     endcase
   end
 
@@ -75,6 +86,8 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
   reg [11:0] pc = 'h200;
   reg [11:0] ret_pc;
   reg [11:0] addr = 0;
+  reg [11:0] transfer_addr;
+  reg [3:0] transfer_counter;
   reg [7:0] v[0:15];
   reg [3:0] sp = 0;
 
@@ -122,6 +135,23 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
         state <= STATE_PUSH_LO;
       STATE_PUSH_LO:
         state <= STATE_FETCH_HI;
+      STATE_STORE:
+        if (transfer_counter == 0)
+          state <= STATE_FETCH_HI;
+        else begin
+          transfer_addr <= transfer_addr - 1;
+          transfer_counter <= transfer_counter - 1;
+        end
+      STATE_LOAD:
+        if (mem_read_ack) begin
+          v[transfer_counter] <= mem_read_byte;
+          if (transfer_counter == 0)
+            state <= STATE_FETCH_HI;
+          else begin
+            transfer_addr <= transfer_addr - 1;
+            transfer_counter <= transfer_counter - 1;
+          end
+        end
       STATE_DECODE: begin
         $display($time, " run [%x] %x", pc, instr);
         pc <= pc + 2;
@@ -286,11 +316,15 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
               end
               8'h55: begin
                 $display($time, " instr: LD [I], V%x", x);
-                // TODO
+                transfer_addr <= addr + {8'b0, x};
+                state <= STATE_STORE;
+                transfer_counter <= x;
               end
               8'h65: begin
                 $display($time, " instr: LD V%x, [I]", x);
-                // TODO
+                transfer_addr <= addr + {8'b0, x};
+                state <= STATE_LOAD;
+                transfer_counter <= x;
               end
               default: ;
             endcase

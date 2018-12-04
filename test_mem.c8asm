@@ -1,0 +1,25 @@
+    ld i, #456
+    ld v0, #12
+    ld v1, #34
+    ld v2, #56
+    ld [i], v2
+
+    ld v0, #00
+    ld v1, #00
+    ld v2, #00
+    ld v2, [i]
+
+    se v0, #12
+    jp fail
+    se v1, #34
+    jp fail
+    se v2, #56
+    jp fail
+
+pass:
+    ld v0, #42
+    dw #00fd ; exit
+
+fail:
+    ld v0, #43
+    dw #00fd ; exit

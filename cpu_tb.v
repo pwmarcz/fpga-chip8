@@ -52,6 +52,9 @@ module top;
     `run("test_add.hex");
     assert_equal(cpu0.v[0], 'h42);
 
+    `run("test_mem.hex");
+    assert_equal(cpu0.v[0], 'h42);
+
     $finish;
   end
 
