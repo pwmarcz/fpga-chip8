@@ -2,7 +2,7 @@
 
 module top;
   reg clk = 1;
-  wire [15:0] pc;
+  wire [11:0] pc;
 
   cpu cpu0(clk, pc);
 
@@ -13,8 +13,8 @@ module top;
     input [11:0] addr;
     input [15:0] instr;
     begin
-      cpu0.mem[addr] = instr[15:8];
-      cpu0.mem[addr+1] = instr[7:0];
+      cpu0._mem[addr] = instr[15:8];
+      cpu0._mem[addr+1] = instr[7:0];
     end
   endtask
 
@@ -34,6 +34,6 @@ module top;
     begin
       $dumpfile(`VCD_FILE);
       $dumpvars;
-      #100 $finish;
+      #200 $finish;
     end
 endmodule // Top
