@@ -9,32 +9,50 @@ module top;
   initial
     forever #1 clk = ~clk;
 
-  task put_instr;
-    input [11:0] addr;
-    input [15:0] instr;
+  task assert_equal;
+    input [7:0] x;
+    input [7:0] y;
     begin
-      cpu0._mem[addr] = instr[15:8];
-      cpu0._mem[addr+1] = instr[7:0];
+      if (x != y)
+        $fatal(1, "%x != %x", x, y);
     end
   endtask
 
-  initial begin
-    put_instr('h100, 'h1104); // JP 104
-    put_instr('h102, 'h0000); // NOP
-    put_instr('h104, 'h2108); // CALL 108
-    put_instr('h106, 'h00FD); // EXIT
+  task reset;
+    integer i;
+    begin
+      for (i = 0; i < 'h1000; i++)
+        cpu0._mem[i] = 0;
+      for (i = 0; i < 16; i++)
+        cpu0.v[i] = 0;
 
-    put_instr('h108, 'h6642); // LD V6, 42
-    put_instr('h10a, 'h8760); // LD V7, V6
-    put_instr('h10c, 'h3742); // SE V7, 42
-    put_instr('h10e, 'h00FD); // EXIT
-    put_instr('h110, 'h00EE); // RET
+      cpu0.addr = 0;
+      cpu0.pc = 'h200;
+
+      cpu0.state = cpu0.STATE_FETCH_HI;
+    end
+  endtask
+
+`define run(name) \
+  $display("Running %s", name); \
+  reset; \
+  $readmemh(name, cpu0._mem, 'h200, 'hFFF); \
+  wait (cpu0.state == cpu0.STATE_IDLE);
+
+  initial begin
+    $dumpfile(`VCD_FILE);
+    $dumpvars;
+
+    `run("test_jump.hex");
+    assert_equal(cpu0.v[0], 'h42);
+
+    `run("test_call.hex");
+    assert_equal(cpu0.v[0], 'h42);
+
+    $finish;
   end
 
   initial
     begin
-      $dumpfile(`VCD_FILE);
-      $dumpvars;
-      #200 $finish;
     end
 endmodule // Top

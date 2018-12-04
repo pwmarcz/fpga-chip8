@@ -1,0 +1,10 @@
+    call p1
+    dw #00fd ; exit
+
+p1:
+    call p2
+    ret
+
+p2:
+    ld v0, #42
+    ret

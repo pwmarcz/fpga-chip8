@@ -3,6 +3,8 @@
 .PHONY: all
 all:
 
+-include ./project.mk
+
 # Don't delete these
 .PRECIOUS: build/%.d build/%.blif build/%.bin build/%.asc
 

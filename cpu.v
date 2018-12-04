@@ -13,12 +13,12 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
   always @(posedge clk) begin
     mem_read_ack <= 0;
     if (mem_read) begin
-      $display($time, " load [%x] = %x", mem_read_idx, _mem[mem_read_idx]);
+      // $display($time, " load [%x] = %x", mem_read_idx, _mem[mem_read_idx]);
       mem_read_byte <= _mem[mem_read_idx];
       mem_read_ack <= 1;
     end
     if (mem_write) begin
-      $display($time, " store [%x] = %x", mem_write_idx, mem_write_byte);
+      // $display($time, " store [%x] = %x", mem_write_idx, mem_write_byte);
       _mem[mem_write_idx] <= mem_write_byte;
     end
   end
@@ -72,7 +72,7 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
   end
 
   // Registers
-  reg [11:0] pc = 'h100;
+  reg [11:0] pc = 'h200;
   reg [11:0] ret_pc;
   reg [11:0] addr = 0;
   reg [7:0] v[0:15];
