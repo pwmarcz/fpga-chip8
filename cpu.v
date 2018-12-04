@@ -84,7 +84,7 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
   wire [7:0] yz = instr[7:0];
   wire [11:0] xyz = instr[11:0];
 
-  wire [7:0] vx, vy;
+  reg [7:0] vx, vy;
 
   always @(posedge clk)
     case (state)
