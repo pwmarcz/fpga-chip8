@@ -24,10 +24,11 @@ module top;
     put_instr('h104, 'h2108); // CALL 108
     put_instr('h106, 'h00FD); // EXIT
 
-    put_instr('h108, 'h6342); // LD V6, 42
-    put_instr('h10a, 'h3342); // SE V6, 42
-    put_instr('h10c, 'h00FD); // EXIT
-    put_instr('h10e, 'h00EE); // RET
+    put_instr('h108, 'h6642); // LD V6, 42
+    put_instr('h10a, 'h8760); // LD V7, V6
+    put_instr('h10c, 'h3742); // SE V7, 42
+    put_instr('h10e, 'h00FD); // EXIT
+    put_instr('h110, 'h00EE); // RET
   end
 
   initial

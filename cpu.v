@@ -74,6 +74,7 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
   // Registers
   reg [11:0] pc = 'h100;
   reg [11:0] ret_pc;
+  reg [11:0] addr = 0;
   reg [7:0] v[0:15];
   reg [3:0] sp = 0;
 
@@ -81,10 +82,16 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
   reg [15:0] instr;
   wire [3:0] a = instr[15:12];
   wire [3:0] x = instr[11:8];
+  wire [3:0] y = instr[7:4];
+  wire [3:0] z = instr[3:0];
   wire [7:0] yz = instr[7:0];
   wire [11:0] xyz = instr[11:0];
 
   reg [7:0] vx, vy;
+
+  integer i;
+  initial for (i = 0; i < 16; i++)
+    v[i] = 0;
 
   always @(posedge clk)
     case (state)
@@ -116,6 +123,7 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
       STATE_PUSH_LO:
         state <= STATE_FETCH_HI;
       STATE_DECODE: begin
+        $display($time, " run [%x] %x", pc, instr);
         pc <= pc + 2;
         state <= STATE_FETCH_HI;
 
@@ -153,12 +161,140 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
             if (vx != yz)
               pc <= pc + 4;
           end
+          4'h5: begin
+            $display($time, " instr: SE V%x, V%x", x, y);
+            if (vx == vy)
+              pc <= pc + 4;
+          end
+          4'h9: begin
+            $display($time, " instr: SNE V%x, V%x", x, y);
+            if (vx != vy)
+              pc <= pc + 4;
+          end
           4'h6: begin
             $display($time, " instr: LD V%x, %x", x, yz);
             v[x] <= yz;
           end
-          default: // TODO
-            ;
+          4'h7: begin
+            $display($time, " instr: ADD V%x, %x", x, yz);
+            v[x] <= vx + yz;
+          end
+          4'h8: begin
+            case (z)
+              4'h0: begin
+                $display($time, " instr: LD V%x, V%x", x, y);
+                v[x] <= vy;
+              end
+              4'h1: begin
+                $display($time, " instr: OR V%x, V%x", x, y);
+                v[x] <= vx | vy;
+              end
+              4'h2: begin
+                $display($time, " instr: AND V%x, V%x", x, y);
+                v[x] <= vx & vy;
+              end
+              4'h3: begin
+                $display($time, " instr: XOR V%x, V%x", x, y);
+                v[x] <= vx ^ vy;
+              end
+              4'h4: begin
+                $display($time, " instr: ADD V%x, V%x", x, y);
+                v[x] <= vx + vy;
+                v['hF] <= ((vx + vy) >= 'h100) ? 1 : 0;
+              end
+              4'h5: begin
+                $display($time, " instr: SUB V%x, V%x", x, y);
+                v[x] <= vx - vy;
+                v['hF] <= (vx > vy) ? 1 : 0;
+              end
+              4'h6: begin
+                $display($time, " instr: SHR V%x", x);
+                v[x] <= vx >> 1;
+                v['hF] <= {7'b0, vx[0]};
+              end
+              4'h7: begin
+                $display($time, " instr: SUBN V%x, V%x", x, y);
+                v[x] <= vy - vx;
+                v['hF] <= (vy > vx) ? 1 : 0;
+              end
+              4'hE: begin
+                $display($time, " instr: SHL V%x", x);
+                v[x] <= vx << 1;
+                v['hF] <= {7'b0, vx[7]};
+              end
+              default: ;
+            endcase
+          end
+          4'hA: begin
+            $display($time, " instr: LD I, %x", xyz);
+            addr <= xyz;
+          end
+          4'hB: begin
+            $display($time, " instr: JP V0, %x", xyz);
+            addr <= xyz + {4'b0, v[0]};
+          end
+          4'hC: begin
+            $display($time, " instr: RND V%x, %x", x, yz);
+            v[x] <= yz; // TODO
+          end
+          4'hD: begin
+            $display($time, " instr: DRW V%x, V%x, %x", x, y, z);
+            // TODO
+          end
+          4'hE: begin
+            case (yz)
+              8'h9E: begin
+                $display($time, " instr: SKP V%x", x);
+                // TODO
+              end
+              8'hA1: begin
+                $display($time, " instr: SKNP V%x", x);
+                // TODO
+              end
+              default: ;
+            endcase
+          end
+          4'hF: begin
+            case (yz)
+              8'h07: begin
+                $display($time, " instr: LD V%x, DT", x);
+                // TODO
+              end
+              8'h0A: begin
+                $display($time, " instr: LD V%x, K", x);
+                // TODO
+              end
+              8'h15: begin
+                $display($time, " instr: LD DT, V%x", x);
+                // TODO
+              end
+              8'h18: begin
+                $display($time, " instr: LD ST, V%x", x);
+                // TODO
+              end
+              8'h1E: begin
+                $display($time, " instr: ADD I, V%x", x);
+                addr <= addr + {4'b0, vx};
+              end
+              8'h29: begin
+                $display($time, " instr: LD F, V%x", x);
+                // TODO
+              end
+              8'h33: begin
+                $display($time, " instr: LD B, V%x", x);
+                // TODO
+              end
+              8'h55: begin
+                $display($time, " instr: LD [I], V%x", x);
+                // TODO
+              end
+              8'h65: begin
+                $display($time, " instr: LD V%x, [I]", x);
+                // TODO
+              end
+              default: ;
+            endcase
+          end
         endcase
       end
     endcase
