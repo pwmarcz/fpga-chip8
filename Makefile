@@ -3,6 +3,7 @@
 .PHONY: all
 all:
 
+# Custom project configuration
 -include ./project.mk
 
 # Don't delete these
@@ -74,7 +75,7 @@ build/%.$(BOARD).blif: %.v build/%.d
 	$(YOSYS) $(YOSYS_OPTS) \
 		-p "verilog_defines -DBOARD_$(BOARD) -DBOARD=$(BOARD)" \
 		-p "read_verilog -noautowire $<" \
-		-p "synth_ice40 -top $(TOP) -blif $@"
+		-p "synth_ice40 -top -top $(TOP) -blif $@"
 
 build/%.$(BOARD).asc: build/%.$(BOARD).blif pcf/$(BOARD).pcf
 	$(PNR) -p pcf/$(BOARD).pcf $(PNR_OPTS) $< -o $@
@@ -85,7 +86,7 @@ build/%.bin: build/%.asc
 # Simulation
 
 build/%.out: %.v build/%.d
-	$(IVERILOG) -DVCD_FILE=\"$(<:.v=.vcd)\" -o $@ $<
+	$(IVERILOG) -DVCD_FILE=\"build/$(<:.v=.vcd)\" -o $@ $<
 
 # Top-level goals (flash, sim, run, time)
 
@@ -104,7 +105,7 @@ sim:: run
 
 .PHONY: run
 run:: build/$(V:.v=.out)
-	cd build && ./$(V:.v=.out)
+	./$<
 
 .PHONY: time
 time:: build/$(V:.v=.$(BOARD).asc)
