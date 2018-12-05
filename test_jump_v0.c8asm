@@ -1,0 +1,7 @@
+    ld v0, #08
+    jp v0, #200 ; ok
+    ld v0, #43
+    dw #00fd ; exit
+ok:
+    ld v0, #42
+    dw #00fd ; exit

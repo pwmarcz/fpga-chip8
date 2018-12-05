@@ -1,6 +1,10 @@
 module cpu(input wire clk, output wire [11:0] debug_pc);
   assign debug_pc = pc;
 
+  // Memory map:
+  // 000..01F: stack (16 x 2 bytes)
+  // 020..02F: registers (16 x 1 byte)
+
   // Memory
   reg [7:0] _mem[0:'hFFF];
   reg mem_read = 0;
@@ -32,10 +36,15 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
     STATE_PUSH_HI = 5,
     STATE_PUSH_LO = 6,
     STATE_DECODE = 7,
-    STATE_STORE = 8,
-    STATE_LOAD = 9;
+    STATE_TRANSFER_LOAD = 8,
+    STATE_TRANSFER_STORE = 9,
+    STATE_LOAD_VX = 10,
+    STATE_LOAD_VY = 11,
+    STATE_LOAD_V0 = 12,
+    STATE_STORE_VX = 13,
+    STATE_STORE_CARRY = 14;
 
-  reg[4:0] state = STATE_FETCH_HI;
+  reg[3:0] state = STATE_FETCH_HI;
 
   // Memory loads and stores
   always @(*) begin
@@ -51,6 +60,18 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
       STATE_FETCH_LO: if (!mem_read_ack) begin
         mem_read = 1;
         mem_read_idx = pc[11:0] + 1;
+      end
+      STATE_LOAD_VX: if (!mem_read_ack) begin
+        mem_read = 1;
+        mem_read_idx = 'h20 + {8'b0, x};
+      end
+      STATE_LOAD_VY: if (!mem_read_ack) begin
+        mem_read = 1;
+        mem_read_idx = 'h20 + {8'b0, y};
+      end
+      STATE_LOAD_V0: if (!mem_read_ack) begin
+        mem_read = 1;
+        mem_read_idx = 'h20;
       end
       STATE_POP_HI: if (!mem_read_ack) begin
         mem_read = 1;
@@ -70,14 +91,24 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
         mem_write_idx = 2 * sp - 1;
         mem_write_byte = ret_pc[7:0];
       end
-      STATE_STORE: begin
-        mem_write = 1;
-        mem_write_idx = transfer_addr;
-        mem_write_byte = v[transfer_counter];
-      end
-      STATE_LOAD: if (!mem_read_ack) begin
+      STATE_TRANSFER_LOAD: if (!mem_read_ack) begin
         mem_read = 1;
-        mem_read_idx = transfer_addr;
+        mem_read_idx = transfer_src_addr + {8'b0, transfer_counter};
+      end
+      STATE_TRANSFER_STORE: begin
+        mem_write = 1;
+        mem_write_idx = transfer_dest_addr + {8'b0, transfer_counter};
+        mem_write_byte = mem_read_byte;
+      end
+      STATE_STORE_VX: begin
+        mem_write = 1;
+        mem_write_idx = 'h20 + {8'b0, x};
+        mem_write_byte = new_vx;
+      end
+      STATE_STORE_CARRY: begin
+        mem_write = 1;
+        mem_write_idx = 'h2F;
+        mem_write_byte = {7'b0, carry};
       end
     endcase
   end
@@ -86,9 +117,8 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
   reg [11:0] pc = 'h200;
   reg [11:0] ret_pc;
   reg [11:0] addr = 0;
-  reg [11:0] transfer_addr;
+  reg [11:0] transfer_src_addr, transfer_dest_addr;
   reg [3:0] transfer_counter;
-  reg [7:0] v[0:15];
   reg [3:0] sp = 0;
 
   // Instruction
@@ -100,11 +130,9 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
   wire [7:0] yz = instr[7:0];
   wire [11:0] xyz = instr[11:0];
 
-  reg [7:0] vx, vy;
-
-  integer i;
-  initial for (i = 0; i < 16; i++)
-    v[i] = 0;
+  reg [7:0] vx, vy, new_vx;
+  reg carry;
+  wire needs_carry = a == 'h8 && (z == 'h4 || z == 'h5 || z == 'h6 || z == 'h7 || z == 'hE);
 
   always @(posedge clk)
     case (state)
@@ -116,11 +144,33 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
       STATE_FETCH_LO:
         if (mem_read_ack) begin
           instr[7:0] <= mem_read_byte;
-          state <= STATE_DECODE;
-          // Fetch vx, vy already
-          vx <= v[instr[11:8]];
-          vy <= v[mem_read_byte[7:4]];
+          if (a == 'hB)
+            // JP V0, xyz
+            state <= STATE_LOAD_V0;
+          else
+            // TODO check if necessary?
+            state <= STATE_LOAD_VX;
         end
+      STATE_LOAD_VX:
+        if (mem_read_ack) begin
+          vx <= mem_read_byte;
+          // TODO check if necessary?
+          state <= STATE_LOAD_VY;
+        end
+      STATE_LOAD_VY:
+        if (mem_read_ack) begin
+          vy <= mem_read_byte;
+          state <= STATE_DECODE;
+        end
+      STATE_LOAD_V0:
+        if (mem_read_ack) begin
+          vx <= mem_read_byte;
+          state <= STATE_DECODE;
+        end
+      STATE_STORE_VX:
+        state <= needs_carry ? STATE_STORE_CARRY : STATE_FETCH_HI;
+      STATE_STORE_CARRY:
+        state <= STATE_FETCH_HI;
       STATE_POP_HI:
         if (mem_read_ack) begin
           pc[11:8] <= mem_read_byte[3:0];
@@ -135,22 +185,15 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
         state <= STATE_PUSH_LO;
       STATE_PUSH_LO:
         state <= STATE_FETCH_HI;
-      STATE_STORE:
+      STATE_TRANSFER_LOAD:
+        if (mem_read_ack)
+          state <= STATE_TRANSFER_STORE;
+      STATE_TRANSFER_STORE:
         if (transfer_counter == 0)
           state <= STATE_FETCH_HI;
         else begin
-          transfer_addr <= transfer_addr - 1;
           transfer_counter <= transfer_counter - 1;
-        end
-      STATE_LOAD:
-        if (mem_read_ack) begin
-          v[transfer_counter] <= mem_read_byte;
-          if (transfer_counter == 0)
-            state <= STATE_FETCH_HI;
-          else begin
-            transfer_addr <= transfer_addr - 1;
-            transfer_counter <= transfer_counter - 1;
-          end
+          state <= STATE_TRANSFER_LOAD;
         end
       STATE_DECODE: begin
         $display($time, " run [%x] %x", pc, instr);
@@ -203,54 +246,65 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
           end
           4'h6: begin
             $display($time, " instr: LD V%x, %x", x, yz);
-            v[x] <= yz;
+            new_vx <= yz;
+            state <= STATE_STORE_VX;
           end
           4'h7: begin
             $display($time, " instr: ADD V%x, %x", x, yz);
-            v[x] <= vx + yz;
+            new_vx <= vx + yz;
+            state <= STATE_STORE_VX;
           end
           4'h8: begin
             case (z)
               4'h0: begin
                 $display($time, " instr: LD V%x, V%x", x, y);
-                v[x] <= vy;
+                new_vx <= vy;
+                state <= STATE_STORE_VX;
               end
               4'h1: begin
                 $display($time, " instr: OR V%x, V%x", x, y);
-                v[x] <= vx | vy;
+                new_vx <= vx | vy;
+                state <= STATE_STORE_VX;
               end
               4'h2: begin
                 $display($time, " instr: AND V%x, V%x", x, y);
-                v[x] <= vx & vy;
+                new_vx <= vx & vy;
+                state <= STATE_STORE_VX;
               end
               4'h3: begin
                 $display($time, " instr: XOR V%x, V%x", x, y);
-                v[x] <= vx ^ vy;
+                new_vx <= vx ^ vy;
+                state <= STATE_STORE_VX;
               end
               4'h4: begin
                 $display($time, " instr: ADD V%x, V%x", x, y);
-                v[x] <= vx + vy;
-                v['hF] <= ((vx + vy) >= 'h100) ? 1 : 0;
+                new_vx <= vx + vy;
+                carry <= ((vx + vy) >= 'h100) ? 1 : 0;
+                state <= STATE_STORE_VX;
               end
               4'h5: begin
                 $display($time, " instr: SUB V%x, V%x", x, y);
-                v[x] <= vx - vy;
-                v['hF] <= (vx > vy) ? 1 : 0;
+                new_vx <= vx - vy;
+                carry <= (vx > vy) ? 1 : 0;
+                state <= STATE_STORE_VX;
               end
               4'h6: begin
                 $display($time, " instr: SHR V%x", x);
-                v[x] <= vx >> 1;
-                v['hF] <= {7'b0, vx[0]};
+                new_vx <= vx >> 1;
+                carry <= vx[0];
+                state <= STATE_STORE_VX;
               end
               4'h7: begin
                 $display($time, " instr: SUBN V%x, V%x", x, y);
-                v[x] <= vy - vx;
-                v['hF] <= (vy > vx) ? 1 : 0;
+                new_vx <= vy - vx;
+                carry <= (vy > vx) ? 1 : 0;
+                state <= STATE_STORE_VX;
               end
               4'hE: begin
                 $display($time, " instr: SHL V%x", x);
-                v[x] <= vx << 1;
-                v['hF] <= {7'b0, vx[7]};
+                new_vx <= vx << 1;
+                carry <= vx[7];
+                state <= STATE_STORE_VX;
               end
               default: ;
             endcase
@@ -261,11 +315,13 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
           end
           4'hB: begin
             $display($time, " instr: JP V0, %x", xyz);
-            addr <= xyz + {4'b0, v[0]};
+            // STATE_LOAD_V0 loaded V0 into vx
+            pc <= xyz + {4'b0, vx};
           end
           4'hC: begin
             $display($time, " instr: RND V%x, %x", x, yz);
-            v[x] <= yz; // TODO
+            new_vx <= yz; // TODO
+            state <= STATE_STORE_VX;
           end
           4'hD: begin
             $display($time, " instr: DRW V%x, V%x, %x", x, y, z);
@@ -316,15 +372,17 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
               end
               8'h55: begin
                 $display($time, " instr: LD [I], V%x", x);
-                transfer_addr <= addr + {8'b0, x};
-                state <= STATE_STORE;
+                transfer_src_addr <= 'h020;
+                transfer_dest_addr <= addr;
                 transfer_counter <= x;
+                state <= STATE_TRANSFER_LOAD;
               end
               8'h65: begin
                 $display($time, " instr: LD V%x, [I]", x);
-                transfer_addr <= addr + {8'b0, x};
-                state <= STATE_LOAD;
+                transfer_src_addr <= addr;
+                transfer_dest_addr <= 'h020;
                 transfer_counter <= x;
+                state <= STATE_TRANSFER_LOAD;
               end
               default: ;
             endcase
