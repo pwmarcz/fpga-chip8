@@ -12,7 +12,7 @@
     ld v9, #08 ; loop increment
     ld i, #100
 loop:
-    ld [i], v0
+    ld [i], v7
     add i, v9
     add v8, v9
     se v8, #00
