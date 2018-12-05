@@ -43,22 +43,22 @@ module top;
     $dumpfile(`VCD_FILE);
     $dumpvars;
 
-    `run("test_jump.hex");
+    `run("build/test_jump.hex");
     assert_equal(cpu0._mem['h020], 'h42);
 
-    `run("test_call.hex");
+    `run("build/test_call.hex");
     assert_equal(cpu0._mem['h020], 'h42);
 
-    `run("test_add.hex");
+    `run("build/test_add.hex");
     assert_equal(cpu0._mem['h020], 'h42);
 
-    `run("test_mem.hex");
+    `run("build/test_mem.hex");
     assert_equal(cpu0._mem['h020], 'h42);
 
-    `run("test_jump_v0.hex");
+    `run("build/test_jump_v0.hex");
     assert_equal(cpu0._mem['h020], 'h42);
 
-    `run("test_screen.hex");
+    `run("build/test_screen.hex");
     for (i = 'h100; i < 'h200; i++)
       assert_equal(cpu0._mem[i], 0);
 
