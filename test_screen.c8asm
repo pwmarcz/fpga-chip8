@@ -1,0 +1,23 @@
+; Fill screen with #42s
+    ld v0, #42
+    ld v1, #42
+    ld v2, #42
+    ld v3, #42
+    ld v4, #42
+    ld v5, #42
+    ld v6, #42
+    ld v7, #42
+
+    ld v8, #00 ; loop counter
+    ld v9, #08 ; loop increment
+    ld i, #100
+loop:
+    ld [i], v0
+    add i, v9
+    add v8, v9
+    se v8, #00
+    jp loop
+
+; Clear screen
+    cls
+    dw #00fd ; exit

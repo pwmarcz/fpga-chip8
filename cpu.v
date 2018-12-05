@@ -38,11 +38,12 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
     STATE_DECODE = 7,
     STATE_TRANSFER_LOAD = 8,
     STATE_TRANSFER_STORE = 9,
-    STATE_LOAD_VX = 10,
-    STATE_LOAD_VY = 11,
-    STATE_LOAD_V0 = 12,
-    STATE_STORE_VX = 13,
-    STATE_STORE_CARRY = 14;
+    STATE_CLEAR = 10,
+    STATE_LOAD_VX = 11,
+    STATE_LOAD_VY = 12,
+    STATE_LOAD_V0 = 13,
+    STATE_STORE_VX = 14,
+    STATE_STORE_CARRY = 15;
 
   reg[3:0] state = STATE_FETCH_HI;
 
@@ -93,12 +94,17 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
       end
       STATE_TRANSFER_LOAD: if (!mem_read_ack) begin
         mem_read = 1;
-        mem_read_idx = transfer_src_addr + {8'b0, transfer_counter};
+        mem_read_idx = transfer_src_addr + {4'b0, transfer_counter};
       end
       STATE_TRANSFER_STORE: begin
         mem_write = 1;
-        mem_write_idx = transfer_dest_addr + {8'b0, transfer_counter};
+        mem_write_idx = transfer_dest_addr + {4'b0, transfer_counter};
         mem_write_byte = mem_read_byte;
+      end
+      STATE_CLEAR: begin
+        mem_write = 1;
+        mem_write_idx = transfer_dest_addr + {4'b0, transfer_counter};
+        mem_write_byte = 0;
       end
       STATE_STORE_VX: begin
         mem_write = 1;
@@ -118,7 +124,7 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
   reg [11:0] ret_pc;
   reg [11:0] addr = 0;
   reg [11:0] transfer_src_addr, transfer_dest_addr;
-  reg [3:0] transfer_counter;
+  reg [7:0] transfer_counter;
   reg [3:0] sp = 0;
 
   // Instruction
@@ -195,24 +201,39 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
           transfer_counter <= transfer_counter - 1;
           state <= STATE_TRANSFER_LOAD;
         end
+      STATE_CLEAR:
+        if (transfer_counter == 0)
+          state <= STATE_FETCH_HI;
+        else begin
+          transfer_counter <= transfer_counter - 1;
+        end
       STATE_DECODE: begin
         $display($time, " run [%x] %x", pc, instr);
         pc <= pc + 2;
         state <= STATE_FETCH_HI;
 
         case (a)
-          4'h0: begin
-            if (xyz == 'h0EE) begin
-              $display($time, " instr: RET");
-              sp <= sp - 1;
-              state <= STATE_POP_HI;
-            end else if (xyz == 'h0FD) begin
-              $display($time, " instr: EXIT");
-              state <= STATE_IDLE;
-            end else begin
-              $display($time, " instr: NOP");
-            end
-          end
+          4'h0:
+            case (xyz)
+              'h0E0: begin
+                $display($time, " instr: CLS");
+                transfer_dest_addr <= 'h100;
+                transfer_counter <= 'hFF;
+                state <= STATE_CLEAR;
+              end
+              'h0EE: begin
+                $display($time, " instr: RET");
+                sp <= sp - 1;
+                state <= STATE_POP_HI;
+              end
+              'h0FD: begin
+                $display($time, " instr: EXIT");
+                state <= STATE_IDLE;
+              end
+              default: begin
+                $display($time, " instr: NOP");
+              end
+            endcase
           4'h1: begin
             $display($time, " instr: JP %x", xyz);
             pc <= xyz;
@@ -374,14 +395,14 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
                 $display($time, " instr: LD [I], V%x", x);
                 transfer_src_addr <= 'h020;
                 transfer_dest_addr <= addr;
-                transfer_counter <= x;
+                transfer_counter <= {4'b0, x};
                 state <= STATE_TRANSFER_LOAD;
               end
               8'h65: begin
                 $display($time, " instr: LD V%x, [I]", x);
                 transfer_src_addr <= addr;
                 transfer_dest_addr <= 'h020;
-                transfer_counter <= x;
+                transfer_counter <= {4'b0, x};
                 state <= STATE_TRANSFER_LOAD;
               end
               default: ;

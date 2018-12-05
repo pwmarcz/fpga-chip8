@@ -31,6 +31,8 @@ module top;
     end
   endtask
 
+  integer i;
+
 `define run(name) \
   $display("Running %s", name); \
   reset; \
@@ -56,10 +58,10 @@ module top;
     `run("test_jump_v0.hex");
     assert_equal(cpu0._mem['h020], 'h42);
 
+    `run("test_screen.hex");
+    for (i = 'h100; i < 'h200; i++)
+      assert_equal(cpu0._mem[i], 0);
+
     $finish;
   end
-
-  initial
-    begin
-    end
 endmodule // Top
