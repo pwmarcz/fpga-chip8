@@ -1,0 +1,21 @@
+; this should set [#123, #124, #125] = 2, 4, 9
+    ld v5, 249
+    ld i, #123
+    ld b, v5
+
+    ld v2, [i]
+    se v0, #02
+    jp fail
+    se v1, #04
+    jp fail
+    se v2, #09
+    jp fail
+
+
+pass:
+    ld v0, #42
+    dw #00fd ; exit
+
+fail:
+    ld v0, #43
+    dw #00fd ; exit

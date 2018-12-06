@@ -62,6 +62,9 @@ module top;
     for (i = 'h100; i < 'h200; i++)
       assert_equal(cpu0._mem[i], 0);
 
+    `run("build/test_bcd.hex");
+    assert_equal(cpu0._mem['h020], 'h42);
+
     $finish;
   end
 endmodule // Top
