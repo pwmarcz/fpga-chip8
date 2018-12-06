@@ -75,7 +75,7 @@ build/%.$(BOARD).blif: %.v build/%.d
 	$(YOSYS) $(YOSYS_OPTS) \
 		-p "verilog_defines -DBOARD_$(BOARD) -DBOARD=$(BOARD)" \
 		-p "read_verilog -noautowire $<" \
-		-p "synth_ice40 -top -top $(TOP) -blif $@"
+		-p "synth_ice40 -top $(TOP) -blif $@"
 
 build/%.$(BOARD).asc: build/%.$(BOARD).blif pcf/$(BOARD).pcf
 	$(PNR) -p pcf/$(BOARD).pcf $(PNR_OPTS) $< -o $@
