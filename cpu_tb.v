@@ -1,4 +1,5 @@
 `include "cpu.v"
+`include "utils.v"
 
 module top;
   reg clk = 1;
@@ -9,14 +10,7 @@ module top;
   initial
     forever #1 clk = ~clk;
 
-  task assert_equal;
-    input [7:0] x;
-    input [7:0] y;
-    begin
-      if (x != y)
-        $fatal(1, "%x != %x", x, y);
-    end
-  endtask
+  initial utils.timeout(10000);
 
   task reset;
     integer i;
@@ -44,26 +38,26 @@ module top;
     $dumpvars;
 
     `run("build/test_jump.hex");
-    assert_equal(cpu0._mem['h020], 'h42);
+    utils.assert_equal(cpu0._mem['h020], 'h42);
 
     `run("build/test_call.hex");
-    assert_equal(cpu0._mem['h020], 'h42);
+    utils.assert_equal(cpu0._mem['h020], 'h42);
 
     `run("build/test_add.hex");
-    assert_equal(cpu0._mem['h020], 'h42);
+    utils.assert_equal(cpu0._mem['h020], 'h42);
 
     `run("build/test_mem.hex");
-    assert_equal(cpu0._mem['h020], 'h42);
+    utils.assert_equal(cpu0._mem['h020], 'h42);
 
     `run("build/test_jump_v0.hex");
-    assert_equal(cpu0._mem['h020], 'h42);
+    utils.assert_equal(cpu0._mem['h020], 'h42);
 
     `run("build/test_screen.hex");
     for (i = 'h100; i < 'h200; i++)
-      assert_equal(cpu0._mem[i], 0);
+      utils.assert_equal(cpu0._mem[i], 0);
 
     `run("build/test_bcd.hex");
-    assert_equal(cpu0._mem['h020], 'h42);
+    utils.assert_equal(cpu0._mem['h020], 'h42);
 
     $finish;
   end

@@ -1,4 +1,5 @@
 `include "bcd.v"
+`include "utils.v"
 
 module top;
   reg [7:0] abc = 0;
@@ -14,10 +15,8 @@ module top;
 
     repeat (256) begin
       #1;
-      if (!(a < 10 && b < 10 && c < 10))
-        $fatal(1, "bad result");
-      if (!(abc == a * 100 + b * 10 + c))
-        $fatal(2, "bad result");
+      utils.assert_equal(abc, a * 100 + b * 10 + c);
+      utils.assert_true(a < 10 && b < 10 && c < 10);
 
       abc += 1;
     end

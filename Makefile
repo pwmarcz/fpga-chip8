@@ -90,6 +90,8 @@ build/%.out: %.v build/%.d
 
 # Top-level goals (flash, sim, run, time)
 
+TESTS = $(wildcard *_tb.v)
+
 flash sim run time::
 ifeq ($(V),)
 	$(error Define target name first, e.g.: make run V=myfile.v)
@@ -110,6 +112,13 @@ run:: build/$(V:.v=.out)
 .PHONY: time
 time:: build/$(V:.v=.$(BOARD).asc)
 	$(ICETIME) -d $(DEVICE) -C $(SHARE_ICEBOX)/chipdb-$(CHIPDB).txt $<
+
+.PHONY: test
+test::
+	set -e; \
+	for v in $(TESTS); do \
+		$(MAKE) run V=$$v; \
+	done
 
 # Cleanup
 
