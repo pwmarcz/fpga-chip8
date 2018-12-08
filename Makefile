@@ -56,9 +56,13 @@ CHIPDB = 8k
 PROG = $(TINYPROG) -p
 endif
 
+# To use install 'moreutils'
+
+CHRONIC =
 ifndef VERBOSE
 PNR_OPTS := -q $(PNR_OPTS)
 YOSYS_OPTS := -q $(YOSYS_OPTS)
+CHRONIC = $(shell which chronic)
 endif
 
 # Dependencies
@@ -115,10 +119,12 @@ time:: build/$(V:.v=.$(BOARD).asc)
 
 .PHONY: test
 test::
-	set -e; \
+	@set -e; \
 	for v in $(TESTS); do \
-		$(MAKE) run V=$$v; \
-	done
+		echo $(MAKE) run V=$$v; \
+		$(CHRONIC) $(MAKE) run V=$$v; \
+	done; \
+	echo "All OK"
 
 # Cleanup
 
