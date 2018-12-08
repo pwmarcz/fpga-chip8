@@ -1,3 +1,5 @@
+`include "bcd.v"
+
 module cpu(input wire clk, output wire [11:0] debug_pc);
   assign debug_pc = pc;
 
@@ -50,17 +52,9 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
 
   reg[4:0] state = STATE_FETCH_HI;
 
-  /*
-   BCD algorithm:
-   1. STATE_BCD_1: Store hundreds digit, remove it from vx
-   2. STATE_BCD_2: Keep removing 10 from vx to calculate tens digit, store it
-   3. STATE_BCD_3: Store rest of vx as ones digit
-   */
-  // BCD first digit
-  wire [1:0] bcd_vx_1 = vx >= 200 ? 2 : vx >= 100 ? 1 : 0;
-  // BCD second digit
-  reg [3:0] bcd_vx_2;
-  wire bcd_vx_2_ready = vx < 10;
+  wire [1:0] bcd_1;
+  wire [3:0] bcd_2, bcd_3;
+  bcd bcd0(vx, bcd_1, bcd_2, bcd_3);
 
   // Memory loads and stores
   always @(*) begin
@@ -134,18 +128,17 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
       STATE_BCD_1: begin
         mem_write = 1;
         mem_write_idx = addr;
-        mem_write_byte = {6'b0, bcd_vx_1};
+        mem_write_byte = {6'b0, bcd_1};
       end
-      STATE_BCD_2:
-        if (bcd_vx_2_ready) begin
-          mem_write = 1;
-          mem_write_idx = addr + 1;
-          mem_write_byte = {4'b0, bcd_vx_2};
-        end
+      STATE_BCD_2: begin
+        mem_write = 1;
+        mem_write_idx = addr + 1;
+        mem_write_byte = {4'b0, bcd_2};
+      end
       STATE_BCD_3: begin
         mem_write = 1;
         mem_write_idx = addr + 2;
-        mem_write_byte = vx;
+        mem_write_byte = {4'b0, bcd_3};
       end
     endcase
   end
@@ -238,18 +231,10 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
         else begin
           transfer_counter <= transfer_counter - 1;
         end
-      STATE_BCD_1: begin
+      STATE_BCD_1:
         state <= STATE_BCD_2;
-        vx <= vx - bcd_vx_1 * 100;
-        bcd_vx_2 <= 0;
-      end
       STATE_BCD_2:
-        if (bcd_vx_2_ready)
-          state <= STATE_BCD_3;
-        else begin
-          bcd_vx_2 <= bcd_vx_2 + 1;
-          vx <= vx - 10;
-        end
+        state <= STATE_BCD_3;
       STATE_BCD_3:
         state <= STATE_FETCH_HI;
       STATE_DECODE: begin
