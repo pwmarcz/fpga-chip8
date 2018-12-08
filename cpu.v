@@ -1,5 +1,7 @@
 `default_nettype none
+
 `include "bcd.v"
+`include "mem.v"
 
 module cpu(input wire clk, output wire [11:0] debug_pc);
   assign debug_pc = pc;
@@ -9,26 +11,19 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
   // 020..02F: registers (16 x 1 byte)
 
   // Memory
-  reg [7:0] _mem[0:'hFFF];
+
   reg mem_read = 0;
-  reg mem_read_ack = 0;
   reg [11:0] mem_read_idx;
-  reg [7:0] mem_read_byte;
+  wire [7:0] mem_read_byte;
+  wire mem_read_ack;
+
   reg mem_write = 0;
   reg [11:0] mem_write_idx;
   reg [7:0] mem_write_byte;
-  always @(posedge clk) begin
-    mem_read_ack <= 0;
-    if (mem_read) begin
-      // $display($time, " load [%x] = %x", mem_read_idx, _mem[mem_read_idx]);
-      mem_read_byte <= _mem[mem_read_idx];
-      mem_read_ack <= 1;
-    end
-    if (mem_write) begin
-      // $display($time, " store [%x] = %x", mem_write_idx, mem_write_byte);
-      _mem[mem_write_idx] <= mem_write_byte;
-    end
-  end
+
+  mem mem0(clk,
+           mem_read, mem_read_idx, mem_read_byte, mem_read_ack,
+           mem_write, mem_write_idx, mem_write_byte);
 
   localparam
     STATE_IDLE = 0,
