@@ -1,3 +1,4 @@
+`default_nettype none
 `include "bcd.v"
 
 module cpu(input wire clk, output wire [11:0] debug_pc);
