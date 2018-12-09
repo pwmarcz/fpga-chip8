@@ -10,6 +10,7 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
   // Memory map:
   // 000..01F: stack (16 x 2 bytes)
   // 020..02F: registers (16 x 1 byte)
+  // 030..07F: font (16 x 5 bytes)
   // 100..1FF: screen (32 lines x 8 bytes)
 
   // Memory
@@ -465,7 +466,7 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
               end
               8'h29: begin
                 $display($time, " instr: LD F, V%x", x);
-                // TODO
+                addr <= 'h30 + vx * 5;
               end
               8'h33: begin
                 $display($time, " instr: LD B, V%x", x);

@@ -17,6 +17,7 @@ module top;
     begin
       for (i = 0; i < 'h1000; i++)
         cpu0.mem0.data[i] = 0;
+      $readmemh("font.hex", cpu0.mem0.data, 'h030, 'h07f);
 
       cpu0.addr = 0;
       cpu0.pc = 'h200;
@@ -57,11 +58,20 @@ module top;
       utils.assert_equal(cpu0.mem0.data[i], 0);
 
     `run("build/test_drw.hex");
+
+    utils.assert_equal(cpu0.mem0.data['h138], 'b00100000);
+    utils.assert_equal(cpu0.mem0.data['h140], 'b01100000);
+    utils.assert_equal(cpu0.mem0.data['h148], 'b00100000);
+    utils.assert_equal(cpu0.mem0.data['h150], 'b00100000);
+    utils.assert_equal(cpu0.mem0.data['h158], 'b01110000);
+
     utils.assert_equal({cpu0.mem0.data['h110], cpu0.mem0.data['h111]}, 'b00110000_00110000);
     utils.assert_equal({cpu0.mem0.data['h118], cpu0.mem0.data['h119]}, 'b00111100_11110000);
     utils.assert_equal({cpu0.mem0.data['h120], cpu0.mem0.data['h121]}, 'b00111100_11110000);
     utils.assert_equal({cpu0.mem0.data['h128], cpu0.mem0.data['h129]}, 'b00111100_11110000);
     utils.assert_equal({cpu0.mem0.data['h130], cpu0.mem0.data['h131]}, 'b00110000_00110000);
+
+    // collision
     utils.assert_equal(cpu0.mem0.data['h02f], 1);
 
     `run("build/test_bcd.hex");

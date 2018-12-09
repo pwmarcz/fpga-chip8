@@ -13,6 +13,8 @@ module mem(input wire clk,
 
   reg [7:0] data[0:'hFFF];
 
+  initial $readmemh("font.hex", data, 'h030, 'h07f);
+
   always @(posedge clk) begin
     read_ack <= 0;
     if (read) begin

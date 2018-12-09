@@ -1,9 +1,21 @@
+; Draw '1' at (0, 7)
+    ld v2, 1
+    ld f, v2
+    ld v2, 0
+    ld v3, 7
+    drw v2, v3, 5
+
     ld i, sprite
+
+; Draw sprite at (2, 2)
     ld v2, 2
     ld v3, 2
     drw v2, v3, 5
+
+; Draw sprite at (4, 2)
     ld v2, 4
     drw v2, v3, 5
+
     dw #00fd ; exit
 
 sprite:
