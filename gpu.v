@@ -24,13 +24,18 @@ module gpu(input wire clk,
   localparam
     STATE_IDLE = 0,
     STATE_LOAD_SPRITE = 1,
-    STATE_LOAD_MEM = 2,
-    STATE_STORE_MEM = 3;
+    STATE_LOAD_MEM_LEFT = 2,
+    STATE_STORE_MEM_LEFT = 3,
+    STATE_LOAD_MEM_RIGHT = 4,
+    STATE_STORE_MEM_RIGHT = 5;
 
   reg [3:0] lines_left;
+  reg [3:0] shift;
+  reg use_right;
   reg [11:0] sprite_addr;
   reg [11:0] screen_addr;
-  reg [7:0] sprite_byte, screen_byte;
+  reg [15:0] sprite_word;
+  reg [7:0] screen_byte;
 
   reg [3:0] state = STATE_IDLE;
   assign busy = state != STATE_IDLE;
@@ -48,15 +53,25 @@ module gpu(input wire clk,
         mem_read = 1;
         mem_read_idx = sprite_addr;
       end
-      STATE_LOAD_MEM: if (!mem_read_ack) begin
+      STATE_LOAD_MEM_LEFT: if (!mem_read_ack) begin
         mem_read = 1;
         mem_read_idx = screen_addr;
       end
-      STATE_STORE_MEM: begin
+      STATE_LOAD_MEM_RIGHT: if (!mem_read_ack) begin
+        mem_read = 1;
+        mem_read_idx = screen_addr + 1;
+      end
+      STATE_STORE_MEM_LEFT: begin
         mem_write = 1;
         mem_write_idx = screen_addr;
         mem_write_byte = screen_byte;
       end
+      STATE_STORE_MEM_RIGHT:
+        if (use_right) begin
+          mem_write = 1;
+          mem_write_idx = screen_addr + 1;
+          mem_write_byte = screen_byte;
+        end
     endcase
   end
 
@@ -69,22 +84,34 @@ module gpu(input wire clk,
           else
             lines_left <= HEIGHT - y - 1;
           sprite_addr <= addr;
-          screen_addr <= 12'h100 + y * WIDTH;
+          screen_addr <= 12'h100 + y * WIDTH + x / 8;
+          shift <= x % 8;
+          use_right <= (x % 8 != 0) && (x / 8 != WIDTH - 1);
           collision <= 0;
           state <= STATE_LOAD_SPRITE;
         end
       STATE_LOAD_SPRITE:
         if (mem_read_ack) begin
-          sprite_byte <= mem_read_byte;
-          state <= STATE_LOAD_MEM;
+          sprite_word <= {mem_read_byte, 8'b0} >> shift;
+          state <= STATE_LOAD_MEM_LEFT;
         end
-      STATE_LOAD_MEM:
+      STATE_LOAD_MEM_LEFT:
         if (mem_read_ack) begin
-          screen_byte <= mem_read_byte ^ sprite_byte;
-          collision <= |(mem_read_byte & sprite_byte);
-          state <= STATE_STORE_MEM;
+          screen_byte <= mem_read_byte ^ sprite_word[15:8];
+          collision <= |(mem_read_byte & sprite_word[15:8]);
+          state <= STATE_STORE_MEM_LEFT;
         end
-      STATE_STORE_MEM:
+      STATE_STORE_MEM_LEFT:
+        state <= STATE_LOAD_MEM_RIGHT;
+      STATE_LOAD_MEM_RIGHT:
+        if (mem_read_ack) begin
+          if (use_right) begin
+            screen_byte <= mem_read_byte ^ sprite_word[7:0];
+            collision <= |(mem_read_byte & sprite_word[7:0]);
+          end
+          state <= STATE_STORE_MEM_RIGHT;
+        end
+      STATE_STORE_MEM_RIGHT:
         if (lines_left == 0)
           state <= STATE_IDLE;
         else begin

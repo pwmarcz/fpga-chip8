@@ -89,7 +89,7 @@ module top;
     utils.assert_equal(mem0.data['h118], 0);
     utils.assert_equal(mem0.data['h120], 0);
 
-    // test clipping
+    // y = 28 (test clipping bottom)
     run('h42, 5, 0, 28);
     utils.assert_equal(collision, 0);
     utils.assert_equal(mem0.data['h1e0], 'b11111111);
@@ -97,6 +97,25 @@ module top;
     utils.assert_equal(mem0.data['h1f0], 'b11000011);
     utils.assert_equal(mem0.data['h1f8], 'b11000011);
     utils.assert_equal(mem0.data['h200], 'b00000000);
+
+    // x = 5
+    run('h42, 5, 5, 0);
+    utils.assert_equal(collision, 0);
+    utils.assert_equal({mem0.data['h100], mem0.data['h101]}, 'b00000111_11111000);
+    utils.assert_equal({mem0.data['h108], mem0.data['h109]}, 'b00000110_00011000);
+    utils.assert_equal({mem0.data['h110], mem0.data['h111]}, 'b00000110_00011000);
+    utils.assert_equal({mem0.data['h118], mem0.data['h119]}, 'b00000110_00011000);
+    utils.assert_equal({mem0.data['h120], mem0.data['h121]}, 'b00000111_11111000);
+
+    // x = 61 (test clipping right)
+    run('h42, 5, 5, 0); // erase first
+    run('h42, 5, 61, 0);
+    utils.assert_equal(collision, 0);
+    utils.assert_equal({mem0.data['h107], mem0.data['h108]}, 'b00000111_00000000);
+    utils.assert_equal({mem0.data['h10f], mem0.data['h110]}, 'b00000110_00000000);
+    utils.assert_equal({mem0.data['h117], mem0.data['h118]}, 'b00000110_00000000);
+    utils.assert_equal({mem0.data['h11f], mem0.data['h120]}, 'b00000110_00000000);
+    utils.assert_equal({mem0.data['h127], mem0.data['h128]}, 'b00000111_00000000);
     $finish;
   end
 endmodule
