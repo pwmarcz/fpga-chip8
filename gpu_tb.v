@@ -8,7 +8,8 @@ module top;
   reg draw = 0;
   reg [11:0] addr;
   reg [3:0] lines;
-  reg [7:0] x, y;
+  reg [5:0] x;
+  reg [4:0] y;
 
   wire busy, collision;
 

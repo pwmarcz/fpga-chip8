@@ -4,8 +4,8 @@ module gpu(input wire clk,
            input wire draw,
            input wire [11:0] addr,
            input wire [3:0] lines,
-           input wire [7:0] x,
-           input wire [7:0] y,
+           input wire [5:0] x,
+           input wire [4:0] y,
 
            output wire busy,
            output reg collision,
@@ -65,12 +65,14 @@ module gpu(input wire clk,
         mem_write = 1;
         mem_write_idx = screen_addr;
         mem_write_byte = screen_byte;
+        $display($time, " gpu: [%x] = %b", screen_addr, screen_byte);
       end
       STATE_STORE_MEM_RIGHT:
         if (use_right) begin
           mem_write = 1;
-          mem_write_idx = screen_addr + 1;
+          mem_write_idx = screen_addr + 11'b1;
           mem_write_byte = screen_byte;
+          $display($time, " gpu: [%x] = %b", screen_addr + 11'b1, screen_byte);
         end
     endcase
   end
@@ -79,6 +81,8 @@ module gpu(input wire clk,
     case (state)
       STATE_IDLE:
         if (draw) begin
+          $display($time, " gpu: draw %x (%x lines) at (%x, %x)",
+                   addr, lines, x, y);
           if (y + lines <= HEIGHT)
             lines_left <= lines - 1;
           else

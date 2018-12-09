@@ -2,6 +2,7 @@
 
 `include "bcd.v"
 `include "mem.v"
+`include "gpu.v"
 
 module cpu(input wire clk, output wire [11:0] debug_pc);
   assign debug_pc = pc;
@@ -9,6 +10,7 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
   // Memory map:
   // 000..01F: stack (16 x 2 bytes)
   // 020..02F: registers (16 x 1 byte)
+  // 100..1FF: screen (32 lines x 8 bytes)
 
   // Memory
 
@@ -44,13 +46,45 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
     STATE_STORE_CARRY = 15,
     STATE_BCD_1 = 16,
     STATE_BCD_2 = 17,
-    STATE_BCD_3 = 18;
+    STATE_BCD_3 = 18,
+    STATE_GPU = 19;
 
   reg[4:0] state = STATE_FETCH_HI;
 
+  // BCD
   wire [1:0] bcd_1;
   wire [3:0] bcd_2, bcd_3;
   bcd bcd0(vx, bcd_1, bcd_2, bcd_3);
+
+  // GPU
+  reg gpu_draw = 0;
+  reg [11:0] gpu_addr;
+  reg [3:0] gpu_lines;
+  reg [5:0] gpu_x;
+  reg [4:0] gpu_y;
+  wire gpu_busy;
+  wire gpu_collision;
+  wire gpu_read;
+  wire [11:0] gpu_read_idx;
+  wire gpu_write;
+  wire [11:0] gpu_write_idx;
+  wire [7:0] gpu_write_byte;
+
+  gpu gpu0(.clk(clk),
+           .draw(gpu_draw),
+           .addr(gpu_addr),
+           .lines(gpu_lines),
+           .x(gpu_x),
+           .y(gpu_y),
+           .busy(gpu_busy),
+           .collision(gpu_collision),
+           .mem_read(gpu_read),
+           .mem_read_idx(gpu_read_idx),
+           .mem_read_byte(mem_read_byte), // pass-through
+           .mem_read_ack(mem_read_ack), // pass-through
+           .mem_write(gpu_write),
+           .mem_write_idx(gpu_write_idx),
+           .mem_write_byte(gpu_write_byte));
 
   // Memory loads and stores
   always @(*) begin
@@ -135,6 +169,13 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
         mem_write = 1;
         mem_write_idx = addr + 2;
         mem_write_byte = {4'b0, bcd_3};
+      end
+      STATE_GPU: begin
+        mem_read = gpu_read;
+        mem_read_idx = gpu_read_idx;
+        mem_write = gpu_write;
+        mem_write_idx = gpu_write_idx;
+        mem_write_byte = gpu_write_byte;
       end
     endcase
   end
@@ -233,6 +274,14 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
         state <= STATE_BCD_3;
       STATE_BCD_3:
         state <= STATE_FETCH_HI;
+      STATE_GPU:
+        begin
+          gpu_draw <= 0;
+          if (!gpu_draw && !gpu_busy) begin
+            carry <= gpu_collision;
+            state <= STATE_STORE_CARRY;
+          end
+        end
       STATE_DECODE: begin
         $display($time, " run [%x] %x", pc, instr);
         pc <= pc + 2;
@@ -372,7 +421,12 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
           end
           4'hD: begin
             $display($time, " instr: DRW V%x, V%x, %x", x, y, z);
-            // TODO
+            gpu_draw <= 1;
+            gpu_addr <= addr;
+            gpu_lines <= z;
+            gpu_x <= vx[5:0];
+            gpu_y <= vy[4:0];
+            state <= STATE_GPU;
           end
           4'hE: begin
             case (yz)

@@ -1,0 +1,14 @@
+    ld i, sprite
+    ld v2, 2
+    ld v3, 2
+    drw v2, v3, 5
+    ld v2, 4
+    drw v2, v3, 5
+    dw #00fd ; exit
+
+sprite:
+    db $11111111
+    db $11....11
+    db $11....11
+    db $11....11
+    db $11111111
