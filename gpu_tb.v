@@ -73,14 +73,25 @@ module top;
 
     #2;
     run('h42, 5, 0, 0);
+    utils.assert_equal(collision, 0);
     utils.assert_equal(mem0.data['h100], 'b11111111);
     utils.assert_equal(mem0.data['h108], 'b11000011);
     utils.assert_equal(mem0.data['h110], 'b11000011);
     utils.assert_equal(mem0.data['h118], 'b11000011);
     utils.assert_equal(mem0.data['h120], 'b11111111);
 
+    // erase
+    run('h42, 5, 0, 0);
+    utils.assert_equal(collision, 1);
+    utils.assert_equal(mem0.data['h100], 0);
+    utils.assert_equal(mem0.data['h108], 0);
+    utils.assert_equal(mem0.data['h110], 0);
+    utils.assert_equal(mem0.data['h118], 0);
+    utils.assert_equal(mem0.data['h120], 0);
+
     // test clipping
     run('h42, 5, 0, 28);
+    utils.assert_equal(collision, 0);
     utils.assert_equal(mem0.data['h1e0], 'b11111111);
     utils.assert_equal(mem0.data['h1e8], 'b11000011);
     utils.assert_equal(mem0.data['h1f0], 'b11000011);

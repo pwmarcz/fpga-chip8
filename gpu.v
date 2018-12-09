@@ -8,7 +8,7 @@ module gpu(input wire clk,
            input wire [7:0] y,
 
            output wire busy,
-           output wire collision,
+           output reg collision,
 
            output reg mem_read,
            output reg [11:0] mem_read_idx,
@@ -70,6 +70,7 @@ module gpu(input wire clk,
             lines_left <= HEIGHT - y - 1;
           sprite_addr <= addr;
           screen_addr <= 12'h100 + y * WIDTH;
+          collision <= 0;
           state <= STATE_LOAD_SPRITE;
         end
       STATE_LOAD_SPRITE:
@@ -80,6 +81,7 @@ module gpu(input wire clk,
       STATE_LOAD_MEM:
         if (mem_read_ack) begin
           screen_byte <= mem_read_byte ^ sprite_byte;
+          collision <= |(mem_read_byte & sprite_byte);
           state <= STATE_STORE_MEM;
         end
       STATE_STORE_MEM:
