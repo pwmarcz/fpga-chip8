@@ -43,7 +43,7 @@ module top;
 
   integer i;
   initial begin
-    for (i = 100; i < 'h200; i++)
+    for (i = 100; i < 'h300; i++)
       mem0.data[i] = 0;
     mem0.data['h42] = 'b11111111;
     mem0.data['h43] = 'b11000011;
@@ -74,10 +74,18 @@ module top;
     #2;
     run('h42, 5, 0, 0);
     utils.assert_equal(mem0.data['h100], 'b11111111);
+    utils.assert_equal(mem0.data['h108], 'b11000011);
     utils.assert_equal(mem0.data['h110], 'b11000011);
-    utils.assert_equal(mem0.data['h120], 'b11000011);
-    utils.assert_equal(mem0.data['h130], 'b11000011);
-    utils.assert_equal(mem0.data['h140], 'b11111111);
+    utils.assert_equal(mem0.data['h118], 'b11000011);
+    utils.assert_equal(mem0.data['h120], 'b11111111);
+
+    // test clipping
+    run('h42, 5, 0, 28);
+    utils.assert_equal(mem0.data['h1e0], 'b11111111);
+    utils.assert_equal(mem0.data['h1e8], 'b11000011);
+    utils.assert_equal(mem0.data['h1f0], 'b11000011);
+    utils.assert_equal(mem0.data['h1f8], 'b11000011);
+    utils.assert_equal(mem0.data['h200], 'b00000000);
     $finish;
   end
 endmodule

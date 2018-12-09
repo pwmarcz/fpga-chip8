@@ -18,13 +18,17 @@ module gpu(input wire clk,
            output reg [11:0] mem_write_idx,
            output reg [7:0] mem_write_byte);
 
+  localparam WIDTH = 8;
+  localparam HEIGHT = 32;
+
   localparam
     STATE_IDLE = 0,
     STATE_LOAD_SPRITE = 1,
     STATE_LOAD_MEM = 2,
     STATE_STORE_MEM = 3;
 
-  reg [11:0] sprite_addr, sprite_end_addr;
+  reg [3:0] lines_left;
+  reg [11:0] sprite_addr;
   reg [11:0] screen_addr;
   reg [7:0] sprite_byte, screen_byte;
 
@@ -60,10 +64,12 @@ module gpu(input wire clk,
     case (state)
       STATE_IDLE:
         if (draw) begin
-          // TODO clip
+          if (y + lines <= HEIGHT)
+            lines_left <= lines - 1;
+          else
+            lines_left <= HEIGHT - y - 1;
           sprite_addr <= addr;
-          sprite_end_addr <= addr + {8'b0, lines} - 1;
-          screen_addr <= 12'h100 + {4'b0, y};
+          screen_addr <= 12'h100 + y * WIDTH;
           state <= STATE_LOAD_SPRITE;
         end
       STATE_LOAD_SPRITE:
@@ -77,11 +83,12 @@ module gpu(input wire clk,
           state <= STATE_STORE_MEM;
         end
       STATE_STORE_MEM:
-        if (sprite_addr == sprite_end_addr)
+        if (lines_left == 0)
           state <= STATE_IDLE;
         else begin
           sprite_addr <= sprite_addr + 1;
-          screen_addr <= screen_addr + 'h10;
+          screen_addr <= screen_addr + WIDTH;
+          lines_left <= lines_left - 1;
           state <= STATE_LOAD_SPRITE;
         end
     endcase
