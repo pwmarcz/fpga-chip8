@@ -1,0 +1,52 @@
+
+    ld v3, 0
+
+loop:
+    cls
+    ld i, digits
+    ld b, v3
+
+    call draw_number
+
+; Wait 10 ticks
+    ld v0, 10
+    ld dt, v0
+wait:
+    ld v0, dt
+    se v0, #00
+    jp wait
+
+; Wipe number
+    call draw_number
+
+    ld v0, 1
+    add v3, v0
+    jp loop
+
+draw_number:
+    ld v0, 0
+    ld v1, 2
+    ld v2, 2
+    call draw_digit
+
+    ld v0, 1
+    ld v1, 7
+    ld v2, 2
+    call draw_digit
+
+    ld v0, 2
+    ld v1, 12
+    ld v2, 2
+    call draw_digit
+    ret
+
+draw_digit:
+    ld i, digits
+    add i, v0
+    ld v0, [i]
+    ld f, v0
+    drw v1, v2, 5
+    ret
+
+digits:
+    db #00, #00, #00
