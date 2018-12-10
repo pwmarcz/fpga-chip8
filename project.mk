@@ -1,7 +1,4 @@
 
-# pip3 install --user 'git+https://github.com/aanunez/tortilla8.git
-# sudo apt install python3-tk
-
 TESTS = $(patsubst asm/%.c8asm,build/%.hex,$(wildcard asm/*.c8asm))
 
 build/cpu_tb.out: $(TESTS)

@@ -3,9 +3,23 @@
 This a [CHIP-8](https://en.wikipedia.org/wiki/CHIP-8) emulator working on an
 FPGA chip (TinyFPGA BX board with iCE40-LP8K chip).
 
+## Dependencies
+
+* Icarus Verilog
+* [IceStorm toolchain](http://www.clifford.at/icestorm/)
+* TinyFPGA BX software (`pip install --user tinyprog`)
+* GTKWave (for `make sim` target)
+* [tortilla8](https://github.com/aanunez/tortilla8/tree/master/tortilla8) (for
+  compiling CHIP-8 ROMs from assembly language):
+
+        pip3 install --user 'git+https://github.com/aanunez/tortilla8.git'
+        sudo apt install python3-tk
+
+See also [setup instructions for my FPGA tutorial](https://pwmarcz.github.io/fpga-tutorial/fpga.html).
+
 ## Running tests
 
-You'll need Icarus Verilog. To run a single test-bench:
+To run a single test-bench:
 
     make run V=cpu_tb.v
 
@@ -15,12 +29,11 @@ To run all tests:
 
 ## Flashing
 
-You will need the [IceStorm toolchain](http://www.clifford.at/icestorm/) and
-TinyFPGA BX board. To flash the project, connect the board and run (TODO):
+To flash the project, connect the board and run:
 
     make flash V=chip.v RAM_FILE=build/default.hex BOARD=bx
 
-See also [setup instructions for my FPGA tutorial](https://pwmarcz.github.io/fpga-tutorial/fpga.html).
+TODO different games
 
 ## Connecting the peripherals
 
