@@ -4,8 +4,10 @@
 `include "mem.v"
 `include "gpu.v"
 
-module cpu(input wire clk, output wire [11:0] debug_pc);
-  assign debug_pc = pc;
+module cpu(input wire clk,
+           input wire clk_60hz,
+           output wire out);
+  assign out = st != 0;
 
   // Memory map:
   // 000..01F: stack (16 x 2 bytes)
@@ -86,6 +88,8 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
            .mem_write(gpu_write),
            .mem_write_idx(gpu_write_idx),
            .mem_write_byte(gpu_write_byte));
+
+  reg last_clk_60hz = 0;
 
   // Memory loads and stores
   always @(*) begin
@@ -188,6 +192,8 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
   reg [11:0] transfer_src_addr, transfer_dest_addr;
   reg [7:0] transfer_counter;
   reg [3:0] sp = 0;
+  reg [7:0] dt = 0;
+  reg [7:0] st = 0;
 
   // Instruction
   reg [15:0] instr;
@@ -202,7 +208,16 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
   reg carry;
   wire needs_carry = a == 'h8 && (z == 'h4 || z == 'h5 || z == 'h6 || z == 'h7 || z == 'hE);
 
-  always @(posedge clk)
+  always @(posedge clk) begin
+    last_clk_60hz <= clk_60hz;
+    if (last_clk_60hz == 0 && clk_60hz == 1) begin
+      $display($time, " tick, dt = %x st = %x", dt, st);
+      if (dt != 0)
+        dt <= dt - 1;
+      if (st != 0)
+        st <= st - 1;
+    end
+
     case (state)
       STATE_FETCH_HI:
         if (mem_read_ack) begin
@@ -446,7 +461,8 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
             case (yz)
               8'h07: begin
                 $display($time, " instr: LD V%x, DT", x);
-                // TODO
+                new_vx <= dt;
+                state <= STATE_STORE_VX;
               end
               8'h0A: begin
                 $display($time, " instr: LD V%x, K", x);
@@ -454,11 +470,11 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
               end
               8'h15: begin
                 $display($time, " instr: LD DT, V%x", x);
-                // TODO
+                dt <= vx;
               end
               8'h18: begin
                 $display($time, " instr: LD ST, V%x", x);
-                // TODO
+                st <= vx;
               end
               8'h1E: begin
                 $display($time, " instr: ADD I, V%x", x);
@@ -492,5 +508,5 @@ module cpu(input wire clk, output wire [11:0] debug_pc);
         endcase
       end
     endcase
-
+  end
 endmodule

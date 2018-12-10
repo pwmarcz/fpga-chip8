@@ -3,12 +3,16 @@
 
 module top;
   reg clk = 1;
-  wire [11:0] pc;
+  reg clk_60hz = 1;
+  wire out;
 
-  cpu cpu0(clk, pc);
+  cpu cpu0(clk, clk_60hz, out);
 
   initial
     forever #1 clk = ~clk;
+
+  initial
+    forever #50 clk_60hz = ~clk_60hz;
 
   initial utils.timeout(10000);
 
@@ -21,6 +25,8 @@ module top;
 
       cpu0.addr = 0;
       cpu0.pc = 'h200;
+      cpu0.dt = 0;
+      cpu0.st = 0;
 
       cpu0.state = cpu0.STATE_FETCH_HI;
     end
@@ -76,6 +82,12 @@ module top;
 
     `run("build/test_bcd.hex");
     utils.assert_equal(cpu0.mem0.data['h020], 'h42);
+
+    // This program should wait 5 ticks
+    i = $time;
+    `run("build/test_timers.hex");
+    utils.assert_equal(($time - i) / 100, 5);
+    utils.assert_equal(out, 1);
 
     $finish;
   end
