@@ -1,0 +1,11 @@
+loop:
+    ; Wait 2 seconds, blink (= set ST) for 1 second
+    ld v0, 120
+    ld dt, v0
+    ld v0, 60
+    ld st, v0
+wait:
+    ld v0, dt
+    se v0, #00
+    jp wait
+    jp loop
