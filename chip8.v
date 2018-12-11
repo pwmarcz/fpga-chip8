@@ -4,16 +4,16 @@
 
 module top(input wire CLK,
            output wire LED4);
-  reg [17:0] counter;
-  reg clk_60hz = 1;
+  reg [18:0] counter;
+  wire tick_60hz = counter == 0;
 
   parameter clk_freq = 12_000_000;
+  parameter clk_divider = clk_freq / 60;
 
-  cpu cpu0(CLK, clk_60hz, LED4);
+  cpu cpu0(CLK, tick_60hz, LED4);
 
   always @(posedge CLK) begin
-    if (counter == clk_freq / 120) begin
-      clk_60hz <= ~clk_60hz;
+    if (counter == clk_divider) begin
       counter <= 0;
     end else
       counter <= counter + 1;

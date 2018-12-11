@@ -3,16 +3,19 @@
 
 module top;
   reg clk = 1;
-  reg clk_60hz = 1;
+  reg tick_60hz = 0;
   wire out;
 
-  cpu cpu0(clk, clk_60hz, out);
+  cpu cpu0(clk, tick_60hz, out);
 
   initial
     forever #1 clk = ~clk;
 
   initial
-    forever #50 clk_60hz = ~clk_60hz;
+    forever begin
+      #98 tick_60hz = 1;
+      #2 tick_60hz = 0;
+    end
 
   initial utils.timeout(10000);
 

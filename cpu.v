@@ -5,7 +5,7 @@
 `include "gpu.v"
 
 module cpu(input wire clk,
-           input wire clk_60hz,
+           input wire tick_60hz,
            output wire out);
   assign out = st != 0;
 
@@ -88,8 +88,6 @@ module cpu(input wire clk,
            .mem_write(gpu_write),
            .mem_write_idx(gpu_write_idx),
            .mem_write_byte(gpu_write_byte));
-
-  reg last_clk_60hz = 0;
 
   // Memory loads and stores
   always @(*) begin
@@ -209,8 +207,7 @@ module cpu(input wire clk,
   wire needs_carry = a == 'h8 && (z == 'h4 || z == 'h5 || z == 'h6 || z == 'h7 || z == 'hE);
 
   always @(posedge clk) begin
-    last_clk_60hz <= clk_60hz;
-    if (last_clk_60hz == 0 && clk_60hz == 1) begin
+    if (tick_60hz) begin
       $display($time, " tick, dt = %x st = %x", dt, st);
       if (dt != 0)
         dt <= dt - 1;
