@@ -3,7 +3,13 @@
 This a [CHIP-8](https://en.wikipedia.org/wiki/CHIP-8) emulator working on an
 FPGA chip (TinyFPGA BX board with iCE40-LP8K chip).
 
-## Dependencies
+## Preparation
+
+First, install the Git submodule where I'm keeping my libraries:
+
+    git submodule update --init
+
+I'm using the following software:
 
 * Icarus Verilog
 * [IceStorm toolchain](http://www.clifford.at/icestorm/)
