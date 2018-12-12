@@ -1,0 +1,3 @@
+[submodule "fpga-tools"]
+	path = fpga-tools
+	url = https://github.com/pwmarcz/fpga-tools.git
