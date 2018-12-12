@@ -1,6 +1,6 @@
 `default_nettype none
 `include "cpu.v"
-`include "oled.v"
+`include "fpga-tools/components/oled.v"
 
 module pattern(input wire clk,
                input wire tick_60hz,
