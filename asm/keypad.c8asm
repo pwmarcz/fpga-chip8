@@ -1,0 +1,47 @@
+loop:
+    cls
+    ld v2, 0  ; key number
+
+draw_digit:
+    ld i, coords
+    add i, v2
+    add i, v2
+    ld v1, [i]  ; x, y
+
+    sknp v2
+    add v1, 2
+
+    ld f, v2
+    drw v0, v1, 5
+
+    add v2, 1
+    se v2, 16
+    jp draw_digit
+
+; Wait 10 ticks
+    ld v0, 10
+    ld dt, v0
+wait:
+    ld v0, dt
+    se v0, 0
+    jp wait
+
+    jp loop
+
+coords:
+    db 10, 26 ; 0
+    db 2, 2   ; 1
+    db 10, 2  ; 2
+    db 18, 2  ; 3
+    db 2, 10  ; 4
+    db 10, 10 ; 5
+    db 18, 10 ; 6
+    db 2, 18  ; 7
+    db 10, 18 ; 8
+    db 18, 18 ; 9
+    db 2, 26  ; A
+    db 18, 26 ; B
+    db 26, 2  ; C
+    db 26, 10 ; D
+    db 26, 18 ; E
+    db 26, 26 ; F
