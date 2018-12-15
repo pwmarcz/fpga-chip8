@@ -67,7 +67,7 @@ Finally, I'm very new to Verilog and so the project is somewhat awkward:
   single-cycle pause due to how the state automatons are specified.
 * iCE40 memory is dual port, so reads and writes could happen at the same time;
   I'm not taking advantage of that.
-* The whole project takes up **1457 LUTs**, I'm sure it could be packed down to
+* The whole project takes up 1600+ LUTs, I'm sure it could be packed down to
   less than 1000, then it could fit on an iCEstick.
 
 **I would love to hear from you** if you have any advice on the code - just
