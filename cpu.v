@@ -8,6 +8,7 @@ module cpu(input wire clk,
            input wire tick_60hz,
            input wire [15:0] keys,
            output wire out,
+           input wire scr_busy,
            input wire scr_read,
            input wire [7:0] scr_read_idx,
            output reg [7:0] scr_read_byte,
@@ -234,8 +235,7 @@ module cpu(input wire clk,
           scr_read_ack <= 1;
           scr_read_byte <= mem_read_byte;
         end
-        // Move to instruction fetch once there are no bytes to read.
-        if (state == STATE_NEXT && !mem_read_ack && !scr_read) begin
+        if (state == STATE_NEXT && !scr_busy) begin
           state <= STATE_FETCH_HI;
         end
       end

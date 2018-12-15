@@ -11,6 +11,7 @@ module top;
            .tick_60hz(tick_60hz),
            .keys(keys),
            .out(out),
+           .scr_busy(1'b0),
            .scr_read(1'b0));
 
   initial

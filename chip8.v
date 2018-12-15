@@ -52,6 +52,7 @@ module top(input wire CLK,
   wire [7:0] oled_data;
   wire       oled_ack;
 
+  wire scr_busy;
   wire scr_read;
   wire [7:0] scr_read_idx;
   wire [7:0] scr_read_byte;
@@ -61,6 +62,7 @@ module top(input wire CLK,
            .tick_60hz(tick_60hz),
            .keys(cpu_keys),
            .out(LED),
+           .scr_busy(scr_busy),
            .scr_read(scr_read),
            .scr_read_idx(scr_read_idx),
            .scr_read_byte(scr_read_byte),
@@ -86,6 +88,7 @@ module top(input wire CLK,
                    .data(oled_data),
                    .ack(oled_ack),
 
+                   .scr_busy(scr_busy),
                    .scr_read(scr_read),
                    .scr_read_idx(scr_read_idx),
                    .scr_read_byte(scr_read_byte),

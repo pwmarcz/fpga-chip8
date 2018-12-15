@@ -8,6 +8,7 @@ module screen_bridge(input wire clk,
                      output reg [7:0] data,
                      output reg ack,
 
+                     output wire scr_busy,
                      output wire scr_read,
                      output wire [7:0] scr_read_idx,
                      input wire [7:0] scr_read_byte,
@@ -39,6 +40,8 @@ module screen_bridge(input wire clk,
     STATE_READ_RECT = 0,
     STATE_WRITE_RECT = 1,
     STATE_WAIT = 2;
+
+  assign scr_busy = state != STATE_WAIT;
 
   reg [1:0] state = STATE_READ_RECT;
 
