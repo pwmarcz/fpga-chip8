@@ -15,6 +15,9 @@ module cpu(input wire clk,
            output reg scr_read_ack);
   assign out = st != 0;
 
+  // Press 0 + F to activate debug mode
+  wire debug_mode = (keys == 16'b1000_0000_0000_0010);
+
   // Memory map:
   // 000..01F: stack (16 x 2 bytes)
   // 020..02F: registers (16 x 1 byte)
@@ -107,6 +110,14 @@ module cpu(input wire clk,
       STATE_NEXT, STATE_STOP: begin
         mem_read = scr_read;
         mem_read_idx = {4'h1, scr_read_idx};
+        if (debug_mode) begin
+          if (scr_read_idx < 'h30)
+            // Show stack and registers
+            mem_read_idx = {4'h0, scr_read_idx};
+          else
+            // Show beginning of program memory
+            mem_read_idx = {4'h2, scr_read_idx - 8'h30};
+        end
       end
       STATE_FETCH_HI: if (!mem_read_ack) begin
         mem_read = 1;
