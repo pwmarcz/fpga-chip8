@@ -19,7 +19,6 @@ module gpu(input wire clk,
            output reg [7:0] mem_write_byte);
 
   localparam WIDTH = 8;
-  localparam HEIGHT = 32;
 
   localparam
     STATE_IDLE = 0,
@@ -33,9 +32,13 @@ module gpu(input wire clk,
   reg [3:0] shift;
   reg use_right;
   reg [11:0] sprite_addr;
-  reg [11:0] screen_addr;
+  reg [7:0] screen_addr;
   reg [15:0] sprite_word;
   reg [7:0] screen_byte;
+
+  wire [11:0] mem_idx_left = {4'h1, screen_addr};
+  // Wrap the last 3 bits to wrap a line correctly (a line is 8 bytes)
+  wire [11:0] mem_idx_right = {4'h1, screen_addr[7:3], screen_addr[2:0] + 1'b1};
 
   reg [3:0] state = STATE_IDLE;
   assign busy = state != STATE_IDLE;
@@ -55,24 +58,24 @@ module gpu(input wire clk,
       end
       STATE_LOAD_MEM_LEFT: if (!mem_read_ack) begin
         mem_read = 1;
-        mem_read_idx = screen_addr;
+        mem_read_idx = mem_idx_left;
       end
       STATE_LOAD_MEM_RIGHT: if (!mem_read_ack) begin
         mem_read = 1;
-        mem_read_idx = screen_addr + 1;
+        mem_read_idx = mem_idx_right;
       end
       STATE_STORE_MEM_LEFT: begin
         mem_write = 1;
-        mem_write_idx = screen_addr;
+        mem_write_idx = mem_idx_left;
         mem_write_byte = screen_byte;
-        $display($time, " gpu: [%x] = %b", screen_addr, screen_byte);
+        $display($time, " gpu: [%x] = %b", mem_idx_left, screen_byte);
       end
       STATE_STORE_MEM_RIGHT:
         if (use_right) begin
           mem_write = 1;
-          mem_write_idx = screen_addr + 11'b1;
+          mem_write_idx = mem_idx_right;
           mem_write_byte = screen_byte;
-          $display($time, " gpu: [%x] = %b", screen_addr + 11'b1, screen_byte);
+          $display($time, " gpu: [%x] = %b", mem_idx_right, screen_byte);
         end
     endcase
   end
@@ -83,14 +86,11 @@ module gpu(input wire clk,
         if (draw) begin
           $display($time, " gpu: draw %x (%x lines) at (%x, %x)",
                    addr, lines, x, y);
-          if (y + lines <= HEIGHT)
-            lines_left <= lines - 1;
-          else
-            lines_left <= HEIGHT - y - 1;
+          lines_left <= lines - 1;
           sprite_addr <= addr;
-          screen_addr <= 12'h100 + y * WIDTH + x / 8;
+          screen_addr <= y * WIDTH + x / 8;
           shift <= x % 8;
-          use_right <= (x % 8 != 0) && (x / 8 != WIDTH - 1);
+          use_right <= (x % 8 != 0);
           collision <= 0;
           state <= STATE_LOAD_SPRITE;
         end

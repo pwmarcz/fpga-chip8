@@ -90,14 +90,15 @@ module top;
     utils.assert_equal(mem0.data['h118], 0);
     utils.assert_equal(mem0.data['h120], 0);
 
-    // y = 28 (test clipping bottom)
+    // y = 28 (test wrapping bottom)
     draw_sprite('h42, 5, 0, 28);
     utils.assert_equal(collision, 0);
     utils.assert_equal(mem0.data['h1e0], 'b11111111);
     utils.assert_equal(mem0.data['h1e8], 'b11000011);
     utils.assert_equal(mem0.data['h1f0], 'b11000011);
     utils.assert_equal(mem0.data['h1f8], 'b11000011);
-    utils.assert_equal(mem0.data['h200], 'b00000000);
+    utils.assert_equal(mem0.data['h100], 'b11111111);
+    draw_sprite('h42, 5, 0, 28); // erase
 
     // x = 5
     draw_sprite('h42, 5, 5, 0);
@@ -107,16 +108,16 @@ module top;
     utils.assert_equal({mem0.data['h110], mem0.data['h111]}, 'b00000110_00011000);
     utils.assert_equal({mem0.data['h118], mem0.data['h119]}, 'b00000110_00011000);
     utils.assert_equal({mem0.data['h120], mem0.data['h121]}, 'b00000111_11111000);
+    draw_sprite('h42, 5, 5, 0); // erase
 
-    // x = 61 (test clipping right)
-    draw_sprite('h42, 5, 5, 0); // erase first
+    // x = 61 (test wrapping right)
     draw_sprite('h42, 5, 61, 0);
     utils.assert_equal(collision, 0);
-    utils.assert_equal({mem0.data['h107], mem0.data['h108]}, 'b00000111_00000000);
-    utils.assert_equal({mem0.data['h10f], mem0.data['h110]}, 'b00000110_00000000);
-    utils.assert_equal({mem0.data['h117], mem0.data['h118]}, 'b00000110_00000000);
-    utils.assert_equal({mem0.data['h11f], mem0.data['h120]}, 'b00000110_00000000);
-    utils.assert_equal({mem0.data['h127], mem0.data['h128]}, 'b00000111_00000000);
+    utils.assert_equal({mem0.data['h107], mem0.data['h100]}, 'b00000111_11111000);
+    utils.assert_equal({mem0.data['h10f], mem0.data['h108]}, 'b00000110_00011000);
+    utils.assert_equal({mem0.data['h117], mem0.data['h110]}, 'b00000110_00011000);
+    utils.assert_equal({mem0.data['h11f], mem0.data['h118]}, 'b00000110_00011000);
+    utils.assert_equal({mem0.data['h127], mem0.data['h120]}, 'b00000111_11111000);
     $finish;
   end
 endmodule
