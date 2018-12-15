@@ -1,0 +1,17 @@
+; Store 8 lowest keys (0..7) as bits of V0, then exit.
+
+    ld v0, 0  ; sum
+    ld v1, 0  ; key
+    ld v2, 1  ; bit-shifted value
+
+loop:
+    sknp v1
+    add v0, v2
+
+    add v1, 1
+    shl v2
+
+    se v1, 8
+    jp loop
+
+    dw #00fd ; exit

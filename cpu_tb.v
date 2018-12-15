@@ -4,12 +4,14 @@
 module top;
   reg clk = 1;
   reg tick_60hz = 0;
+  reg [15:0] keys = 0;
   wire out;
 
   cpu cpu0(.clk(clk),
            .tick_60hz(tick_60hz),
+           .keys(keys),
            .out(out),
-           .scr_read(0));
+           .scr_read(1'b0));
 
   initial
     forever #1 clk = ~clk;
@@ -64,6 +66,11 @@ module top;
 
     `run("build/test_jump_v0.hex");
     utils.assert_equal(cpu0.mem0.data['h020], 'h42);
+
+    keys <= 'b10101010;
+    `run("build/test_keys.hex");
+    keys <= 'b00000000;
+    utils.assert_equal(cpu0.mem0.data['h020], 'b10101010);
 
     `run("build/test_screen.hex");
     for (i = 'h100; i < 'h200; i++)
