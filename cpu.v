@@ -6,6 +6,7 @@
 
 module cpu(input wire clk,
            input wire tick_60hz,
+           input wire tick_next,
            input wire [15:0] keys,
            output wire out,
            input wire scr_busy,
@@ -229,6 +230,9 @@ module cpu(input wire clk,
   reg carry;
   wire needs_carry = a == 'h8 && (z == 'h4 || z == 'h5 || z == 'h6 || z == 'h7 || z == 'hE);
 
+  // Can go to the next instruction (for rate limiting by tick_next)
+  reg next = 1;
+
   always @(posedge clk) begin
     if (tick_60hz) begin
       $display($time, " tick, dt = %x st = %x", dt, st);
@@ -238,6 +242,9 @@ module cpu(input wire clk,
         st <= st - 1;
     end
 
+    if (tick_next)
+      next <= 1;
+
     scr_read_ack <= 0;
 
     case (state)
@@ -246,7 +253,8 @@ module cpu(input wire clk,
           scr_read_ack <= 1;
           scr_read_byte <= mem_read_byte;
         end
-        if (state == STATE_NEXT && !scr_busy) begin
+        if (state == STATE_NEXT && !scr_busy && next) begin
+          next <= 0;
           state <= STATE_FETCH_HI;
         end
       end

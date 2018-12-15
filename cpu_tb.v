@@ -9,6 +9,7 @@ module top;
 
   cpu cpu0(.clk(clk),
            .tick_60hz(tick_60hz),
+           .tick_next(1'b1),
            .keys(keys),
            .out(out),
            .scr_busy(1'b0),

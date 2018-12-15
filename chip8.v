@@ -33,17 +33,24 @@ module top(input wire CLK,
   assign PIN_11 = 0; // oled: GND
   assign PIN_10 = 0; // oled: NC
 
-  reg [18:0] counter;
-  wire tick_60hz = counter == 0;
+  reg [18:0] counter_60hz, counter_next;
+  wire tick_60hz = counter_60hz == 0;
+  wire tick_next = counter_next == 0;
 
   parameter clk_freq = 16_000_000;
-  parameter clk_divider = clk_freq / 60;
+  parameter clk_divider_60hz = clk_freq / 60;
+
+  parameter instr_freq = 500;
+  parameter clk_divider_next = clk_freq / instr_freq;
 
   always @(posedge CLK) begin
-    if (counter == clk_divider) begin
-      counter <= 0;
-    end else
-      counter <= counter + 1;
+    counter_60hz <= counter_60hz + 1;
+    if (counter_60hz == clk_divider_60hz)
+      counter_60hz <= 0;
+
+    counter_next <= counter_next + 1;
+    if (counter_next == clk_divider_next)
+      counter_next <= 0;
   end
 
   wire       oled_read;
@@ -60,6 +67,7 @@ module top(input wire CLK,
 
   cpu cpu0(.clk(CLK),
            .tick_60hz(tick_60hz),
+           .tick_next(tick_next),
            .keys(cpu_keys),
            .out(LED),
            .scr_busy(scr_busy),
