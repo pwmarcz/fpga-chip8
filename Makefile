@@ -13,6 +13,9 @@ build/%.ch8: asm/%.c8asm
 build/%.hex: build/%.ch8
 	hexdump -v -e '/1 "%02X "' $< > $@
 
+build/%.hex: games/%.ch8
+	hexdump -v -e '/1 "%02X "' $< > $@
+
 GAME ?= counter
 
 .PHONY: flash-chip8
