@@ -233,6 +233,8 @@ module cpu(input wire clk,
   // Can go to the next instruction (for rate limiting by tick_next)
   reg next = 1;
 
+  integer i;
+
   always @(posedge clk) begin
     if (tick_60hz) begin
       $display($time, " tick, dt = %x st = %x", dt, st);
@@ -509,7 +511,13 @@ module cpu(input wire clk,
               end
               8'h0A: begin
                 $display($time, " instr: LD V%x, K", x);
-                // TODO
+                if (keys == 0)
+                  pc <= pc;
+                else begin
+                  for (i = 15; i >= 0; i--)
+                    if (keys[i])
+                      vx <= i[7:0];
+                end
               end
               8'h15: begin
                 $display($time, " instr: LD DT, V%x", x);
