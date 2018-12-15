@@ -37,9 +37,12 @@ To run all tests:
 
 To flash the project, connect the board and run:
 
-    make flash V=chip.v RAM_FILE=build/default.hex BOARD=bx
+    make flash-chip8
 
-TODO different games
+This will also compile and run the default "game", which is `counter`
+(`asm/counter.c8asm`). To use a different one (e.g. `tetris`), run:
+
+    make flash-chip8 GAME=tetris
 
 ## Connecting the peripherals
 
