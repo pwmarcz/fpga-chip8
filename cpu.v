@@ -3,6 +3,7 @@
 `include "bcd.v"
 `include "mem.v"
 `include "gpu.v"
+`include "rng.v"
 
 module cpu(input wire clk,
            input wire tick_60hz,
@@ -232,6 +233,9 @@ module cpu(input wire clk,
 
   // Can go to the next instruction (for rate limiting by tick_next)
   reg next = 1;
+
+  wire [31:0] rng_state;
+  rng rng(.clk(clk), .out(rng_state), .user_input(&keys));
 
   integer i;
 
@@ -473,7 +477,7 @@ module cpu(input wire clk,
           end
           4'hC: begin
             $display($time, " instr: RND V%x, %x", x, yz);
-            new_vx <= yz; // TODO
+            new_vx <= rng_state[15:8] & yz;
             state <= STATE_STORE_VX;
           end
           4'hD: begin

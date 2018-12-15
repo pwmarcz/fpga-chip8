@@ -55,8 +55,10 @@ I added a "debug mode" that activates when you press 1 and F at the same
 time. Instead of showing the screen buffer, I'm rendering registers, stack and
 (some of) program memory instead. It's fun to watch :)
 
-Random number generation is not implemented yet, but I would probably use
-[Xorshift](https://en.wikipedia.org/wiki/Xorshift) and seed it with user input.
+Random number generation uses
+[Xorshift](https://en.wikipedia.org/wiki/Xorshift). It calculates a new value
+every cycle, and iterates the calculation twice if any key is pressed so that
+the results depend on user input.
 
 Finally, I'm very new to Verilog and so the project is somewhat awkward:
 
