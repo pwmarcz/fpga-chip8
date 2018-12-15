@@ -1,71 +1,58 @@
-# CHIP-8 on FPGA
+# CHIP-8 console on FPGA
 
-This a [CHIP-8](https://en.wikipedia.org/wiki/CHIP-8) emulator working on an
-FPGA chip (TinyFPGA BX board with iCE40-LP8K chip).
+This a [CHIP-8](https://en.wikipedia.org/wiki/CHIP-8) game console emulator
+working on an FPGA chip (TinyFPGA BX board with iCE40-LP8K chip).
 
-## Preparation
+### Implementation notes
 
-First, install the Git submodule where I'm keeping my libraries:
+(TODO)
 
-    git submodule update --init
-
-I'm using the following software:
-
-* Icarus Verilog
-* [IceStorm toolchain](http://www.clifford.at/icestorm/)
-* TinyFPGA BX software (`pip install --user tinyprog`)
-* GTKWave (for `make sim` target)
-* [tortilla8](https://github.com/aanunez/tortilla8/tree/master/tortilla8) (for
-  compiling CHIP-8 ROMs from assembly language):
-
-        pip3 install --user 'git+https://github.com/aanunez/tortilla8.git'
-        sudo apt install python3-tk
-
-See also [setup instructions for my FPGA tutorial](https://pwmarcz.github.io/fpga-tutorial/fpga.html).
-
-## Running tests
-
-To run a single test-bench:
-
-    make run V=cpu_tb.v
-
-To run all tests:
-
-    make test
-
-## Flashing
-
-To flash the project, connect the board and run:
-
-    make flash-chip8
-
-This will also compile and run the default "game", which is `counter`
-(`asm/counter.c8asm`). To use a different one (e.g. `tetris`), run:
-
-    make flash-chip8 GAME=tetris
-
-## Connecting the peripherals
+## Hardware
 
 I'm using the following:
 
+* [TinyFPGA BX](https://tinyfpga.com/bx/guide.html) with Lattice iCE40-LP8K chip
 * [SparkFun 16-button keyboard](https://www.sparkfun.com/products/14881)
 * [WaveShare 128x64px monochrome OLED screen](https://www.waveshare.com/0.96inch-oled-b.htm)
 
 (TODO how to connect on a breadboard)
 
-## Flashing other games
+## Source code outline
 
-(TODO)
+Verilog modules:
 
-## Implementation notes
+* `chip8.v` - top-level module for TinyFPGA BX
+* `cpu.v` - CPU with memory controller
+* `mem.v` - system memory
+* `gpu.v` - sprite drawing
+* `bcd.v` - BCD conversion circuit (byte to 3 decimal digits)
+* `screen_bridge.v` - bridge between OLED and CPU (to access frame buffer in
+  system memory)
 
-(TODO)
+Tests:
+
+* `*_tb.v` - test-benches for modules (see below on how to run)
+* `asm/` - various assembly programs
+
+Games:
+
+* `games/` - game ROMs, taken from http://devernay.free.fr/hacks/chip8/
+
+The [fpga-tools](https://github.com/pwmarcz/fpga-tools/) repo is included as a
+submodule:
+* `fpga.mk` - Makefile targets
+* `components/oled.v` - OLED screen
+* `components/keypad.v` - keypad
+
+## Running the project
+
+See [INSTALL.md](INSTALL.md).
 
 ## License
 
 By Paweł Marczewski <pwmarcz@gmail.com>.
 
-Licensed under MIT (see [`LICENSE`](LICENSE)), unless otherwise specified.
+Licensed under MIT (see [`LICENSE`](LICENSE)), except the `games` directory.
 
 ## See also
 
