@@ -6,7 +6,10 @@ module top;
   reg tick_60hz = 0;
   wire out;
 
-  cpu cpu0(clk, tick_60hz, out);
+  cpu cpu0(.clk(clk),
+           .tick_60hz(tick_60hz),
+           .out(out),
+           .scr_read(0));
 
   initial
     forever #1 clk = ~clk;
@@ -31,7 +34,7 @@ module top;
       cpu0.dt = 0;
       cpu0.st = 0;
 
-      cpu0.state = cpu0.STATE_FETCH_HI;
+      cpu0.state = cpu0.STATE_NEXT;
     end
   endtask
 
@@ -41,7 +44,7 @@ module top;
   $display("Running %s", name); \
   reset; \
   $readmemh(name, cpu0.mem0.data, 'h200, 'hFFF); \
-  wait (cpu0.state == cpu0.STATE_IDLE);
+  wait (cpu0.state == cpu0.STATE_STOP);
 
   initial begin
     $dumpfile(`VCD_FILE);

@@ -6,7 +6,11 @@
 
 module cpu(input wire clk,
            input wire tick_60hz,
-           output wire out);
+           output wire out,
+           input wire scr_read,
+           input wire [7:0] scr_read_idx,
+           output reg [7:0] scr_read_byte,
+           output reg scr_read_ack);
   assign out = st != 0;
 
   // Memory map:
@@ -31,7 +35,7 @@ module cpu(input wire clk,
            mem_write, mem_write_idx, mem_write_byte);
 
   localparam
-    STATE_IDLE = 0,
+    STATE_NEXT = 0,
     STATE_FETCH_HI = 1,
     STATE_FETCH_LO = 2,
     STATE_POP_HI = 3,
@@ -50,9 +54,11 @@ module cpu(input wire clk,
     STATE_BCD_1 = 16,
     STATE_BCD_2 = 17,
     STATE_BCD_3 = 18,
-    STATE_GPU = 19;
+    STATE_GPU = 19,
+    // ...
+    STATE_STOP = 31;
 
-  reg[4:0] state = STATE_FETCH_HI;
+  reg[4:0] state = STATE_NEXT;
 
   // BCD
   wire [1:0] bcd_1;
@@ -96,6 +102,10 @@ module cpu(input wire clk,
     mem_read_idx = 0;
 
     case (state)
+      STATE_NEXT, STATE_STOP: begin
+        mem_read = scr_read;
+        mem_read_idx = {4'h1, scr_read_idx};
+      end
       STATE_FETCH_HI: if (!mem_read_ack) begin
         mem_read = 1;
         mem_read_idx = pc[11:0];
@@ -215,7 +225,19 @@ module cpu(input wire clk,
         st <= st - 1;
     end
 
+    scr_read_ack <= 0;
+
     case (state)
+      STATE_NEXT, STATE_STOP: begin
+        if (scr_read && mem_read_ack) begin
+          scr_read_ack <= 1;
+          scr_read_byte <= mem_read_byte;
+        end
+        // Move to instruction fetch once there are no bytes to read.
+        if (state == STATE_NEXT && !mem_read_ack && !scr_read) begin
+          state <= STATE_FETCH_HI;
+        end
+      end
       STATE_FETCH_HI:
         if (mem_read_ack) begin
           instr[15:8] <= mem_read_byte;
@@ -248,9 +270,9 @@ module cpu(input wire clk,
           state <= STATE_DECODE;
         end
       STATE_STORE_VX:
-        state <= needs_carry ? STATE_STORE_CARRY : STATE_FETCH_HI;
+        state <= needs_carry ? STATE_STORE_CARRY : STATE_NEXT;
       STATE_STORE_CARRY:
-        state <= STATE_FETCH_HI;
+        state <= STATE_NEXT;
       STATE_POP_HI:
         if (mem_read_ack) begin
           pc[11:8] <= mem_read_byte[3:0];
@@ -259,25 +281,25 @@ module cpu(input wire clk,
       STATE_POP_LO:
         if (mem_read_ack) begin
           pc[7:0] <= mem_read_byte;
-          state <= STATE_FETCH_HI;
+          state <= STATE_NEXT;
         end
       STATE_PUSH_HI:
         state <= STATE_PUSH_LO;
       STATE_PUSH_LO:
-        state <= STATE_FETCH_HI;
+        state <= STATE_NEXT;
       STATE_TRANSFER_LOAD:
         if (mem_read_ack)
           state <= STATE_TRANSFER_STORE;
       STATE_TRANSFER_STORE:
         if (transfer_counter == 0)
-          state <= STATE_FETCH_HI;
+          state <= STATE_NEXT;
         else begin
           transfer_counter <= transfer_counter - 1;
           state <= STATE_TRANSFER_LOAD;
         end
       STATE_CLEAR:
         if (transfer_counter == 0)
-          state <= STATE_FETCH_HI;
+          state <= STATE_NEXT;
         else begin
           transfer_counter <= transfer_counter - 1;
         end
@@ -286,7 +308,7 @@ module cpu(input wire clk,
       STATE_BCD_2:
         state <= STATE_BCD_3;
       STATE_BCD_3:
-        state <= STATE_FETCH_HI;
+        state <= STATE_NEXT;
       STATE_GPU:
         begin
           gpu_draw <= 0;
@@ -298,7 +320,7 @@ module cpu(input wire clk,
       STATE_DECODE: begin
         $display($time, " run [%x] %x", pc, instr);
         pc <= pc + 2;
-        state <= STATE_FETCH_HI;
+        state <= STATE_NEXT;
 
         case (a)
           4'h0:
@@ -316,7 +338,7 @@ module cpu(input wire clk,
               end
               'h0FD: begin
                 $display($time, " instr: EXIT");
-                state <= STATE_IDLE;
+                state <= STATE_STOP;
               end
               default: begin
                 $display($time, " instr: NOP");
