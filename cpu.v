@@ -479,12 +479,14 @@ module cpu(input wire clk,
             case (yz)
               8'h9E: begin
                 $display($time, " instr: SKP V%x", x);
-                if (keys[vx[3:0]])
+                // In debug mode, assume no keys are pressed.
+                if (!debug_mode && keys[vx[3:0]])
                   pc <= pc + 4;
               end
               8'hA1: begin
                 $display($time, " instr: SKNP V%x", x);
-                if (!keys[vx[3:0]])
+                // In debug mode, assume no keys are pressed.
+                if (debug_mode || !keys[vx[3:0]])
                   pc <= pc + 4;
               end
               default: ;
