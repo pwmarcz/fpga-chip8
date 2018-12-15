@@ -13,6 +13,14 @@ a lot, I was able to test most instructions in simulation. I wrote several
 [simple assembly programs](asm/) which I compiled to CHIP-8 using the
 [Tortilla-8](https://github.com/aanunez/tortilla8) project.
 
+There was also some manual testing needed in order to get both the screen and
+the keypad to work. I wrote some simple programs to run on the chip, and
+corrected some misconceptions I have on CHIP-8 behavior (for instance, memory
+loads and stores include multiple registers, and sprite drawing wraps
+around). I was able to correct my [Rust CHIP-8
+emulator](https://github.com/pwmarcz/chiprs) in the process; it's funny how it
+was able to run many games despite getting these things completely wrong.
+
 The CHIP-8 specification includes 16 one-byte registers (V0 to VF) and 20
 two-byte words of stack. Initially I wanted them to be separate arrays, but it
 was really hard to coordinate access so that they get synthesized as RAM, so I
