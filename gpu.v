@@ -102,7 +102,7 @@ module gpu(input wire clk,
       STATE_LOAD_MEM_LEFT:
         if (mem_read_ack) begin
           screen_byte <= mem_read_byte ^ sprite_word[15:8];
-          collision <= |(mem_read_byte & sprite_word[15:8]);
+          collision <= collision | |(mem_read_byte & sprite_word[15:8]);
           state <= STATE_STORE_MEM_LEFT;
         end
       STATE_STORE_MEM_LEFT:
@@ -111,7 +111,7 @@ module gpu(input wire clk,
         if (mem_read_ack) begin
           if (use_right) begin
             screen_byte <= mem_read_byte ^ sprite_word[7:0];
-            collision <= |(mem_read_byte & sprite_word[7:0]);
+            collision <= collision | |(mem_read_byte & sprite_word[7:0]);
           end
           state <= STATE_STORE_MEM_RIGHT;
         end
