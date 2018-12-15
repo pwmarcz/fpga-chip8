@@ -6,9 +6,63 @@ working on FPGA chip ([TinyFPGA BX](https://www.crowdsupply.com/tinyfpga/tinyfpg
 ![invaders](img/invaders-small.jpg)
 ![invaders2-small](img/invaders2-small.jpg)
 
-### Implementation notes
+## Implementation notes and remarks
 
-(TODO)
+Writing unit tests (see [cpu](cpu_tb.v), [gpu](gpu_tb.v), [bcd](bcd_tb.v)) helped me
+a lot, I was able to test most instructions in simulation. I wrote several
+[simple assembly programs](asm/) which I compiled to CHIP-8 using the
+[Tortilla-8](https://github.com/aanunez/tortilla8) project.
+
+The CHIP-8 specification includes 16 one-byte registers (V0 to VF) and 20
+two-byte words of stack. Initially I wanted them to be separate arrays, but it
+was really hard to coordinate access so that they get synthesized as RAM, so I
+decided to map them to memory instead (see the memory map described [at the top
+of cpu.v](cpu.v)).
+
+I also mapped screen contents to system memory, so two different modules (CPU and
+screen) had to compete for memory access somehow. I decided to pause the CPU
+(i.e. not make it process the next instruction) whenever we want to read the
+screen contents.
+
+Working with screen was annoying. I'm storing the frame contents line by line
+(each byte is an 8-pixel horizontal strip), but the screen I'm using expects
+*vertical* strips of 8 pixels, so there's some logic necessary for rotating that
+around.
+
+The BCD instruction (convert a byte to 3 decimal digits) was difficult to
+implement in circuitry since it involves diving by 10. I went with a method
+described in [Hacker's Delight](http://www.hackersdelight.org/divcMore.pdf),
+which involves some bit shifts and a manual adjustments. See [bcd.v](bcd.v).
+
+Loading games into memory was interesting. The IceStorm tools include a nice
+`icebram` utility for replacing memory contents in an already prepared
+bitstream. This means I don't have to repeat the whole lengthy (~30s) build
+when I just want to run a different game.
+
+The default clock speed on the BX is 16 MHz, which is way too fast for CHIP-8
+games. So while the individual instructions run really quickly, I throttle
+down the overall speed to 500 instructions per second.
+
+I added a "debug mode" that activates when you press 1 and F at the same
+time. Instead of showing the screen buffer, I'm rendering registers, stack and
+(some of) program memory instead. It's fun to watch :)
+
+Random number generation is not implemented yet, but I would probably use
+[Xorshift](https://en.wikipedia.org/wiki/Xorshift) and seed it with user input.
+
+Finally, I'm very new to Verilog and so the project is somewhat awkward:
+
+* An individual instruction takes about 20 cycles.
+* Memory access follows a "read -> acknowledge" cycle with an unnecessary
+  single-cycle pause due to how the state automatons are specified.
+* iCE40 memory is dual port, so reads and writes could happen at the same time;
+  I'm not taking advantage of that.
+* The whole project takes up **1457 LUTs**, I'm sure it could be packed down to
+  less than 1000, then it could fit on an iCEstick.
+
+**I would love to hear from you** if you have any advice on the code - just
+[email me](mailto:pwmarcz@gmail.com) or add an issue to the project. Of course,
+pull requests are also welcome!
 
 ## Hardware
 
