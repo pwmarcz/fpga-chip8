@@ -1,7 +1,10 @@
 # CHIP-8 console on FPGA
 
 This a [CHIP-8](https://en.wikipedia.org/wiki/CHIP-8) game console emulator
-working on an FPGA chip (TinyFPGA BX board with iCE40-LP8K chip).
+working on FPGA chip ([TinyFPGA BX](https://www.crowdsupply.com/tinyfpga/tinyfpga-bx)).
+
+![invaders](img/invaders-small.jpg)
+![invaders2-small](img/invaders2-small.jpg)
 
 ### Implementation notes
 
@@ -11,11 +14,9 @@ working on an FPGA chip (TinyFPGA BX board with iCE40-LP8K chip).
 
 I'm using the following:
 
-* [TinyFPGA BX](https://tinyfpga.com/bx/guide.html) with Lattice iCE40-LP8K chip
+* [TinyFPGA BX](https://www.crowdsupply.com/tinyfpga/tinyfpga-bx) with Lattice iCE40-LP8K chip
 * [SparkFun 16-button keyboard](https://www.sparkfun.com/products/14881)
 * [WaveShare 128x64px monochrome OLED screen](https://www.waveshare.com/0.96inch-oled-b.htm)
-
-(TODO how to connect on a breadboard)
 
 ## Source code outline
 
