@@ -10,6 +10,8 @@ endmodule
 
 module top(input wire CLK,
            output wire LED,
+           // Turbo mode
+           input wire PIN_1,
            // Keypad:
            output wire PIN_22,
            output wire PIN_21,
@@ -33,9 +35,13 @@ module top(input wire CLK,
   assign PIN_11 = 0; // oled: GND
   assign PIN_10 = 0; // oled: NC
 
+  // Turbo mode: connect pin to ground to bypass instruction rate limit.
+  wire turbo_mode;
+  pullup pu_turbo_mode(PIN_1, turbo_mode);
+
   reg [18:0] counter_60hz, counter_next;
   wire tick_60hz = counter_60hz == 0;
-  wire tick_next = counter_next == 0;
+  wire tick_next = (counter_next == 0 || turbo_mode == 0);
 
   parameter clk_freq = 16_000_000;
   parameter clk_divider_60hz = clk_freq / 60;
