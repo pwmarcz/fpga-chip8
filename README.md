@@ -91,6 +91,7 @@ Verilog modules:
 * `mem.v` - system memory
 * `gpu.v` - sprite drawing
 * `bcd.v` - BCD conversion circuit (byte to 3 decimal digits)
+* `rng.v` - pseudorandom number generator
 * `screen_bridge.v` - bridge between OLED and CPU (to access frame buffer in
   system memory)
 
